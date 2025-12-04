@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shirley FIP 乾性腹膜炎追蹤紀錄</title>
+    <title>Shirley FIP 乾性腹膜炎追蹤紀錄 (本機版)</title>
     <!-- Tailwind CSS CDN for modern, responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -30,61 +30,78 @@
             transition: all 0.2s;
         }
         input:focus, select:focus, textarea:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            border-color: #10b981; /* 綠色，代表本機連線成功 */
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
             outline: none;
+        }
+        /* New styling for medication checkboxes */
+        input[type="checkbox"] {
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+        /* Styling for the notes column to allow wrapping */
+        .notes-cell {
+            white-space: normal;
+            word-break: break-all;
+            max-width: 150px; /* Limit width for table readability */
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <!-- Main Application Container -->
-    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6 md:p-10">
+    <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-xl p-6 md:p-10">
 
-        <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-700 mb-2">
-            Shirley 緬因貓 FIP 追蹤
+        <h1 class="text-3xl md:text-4xl font-extrabold text-green-700 mb-2">
+            Shirley 緬因貓 FIP 追蹤 (本機版)
         </h1>
         <p class="text-gray-600 mb-6">
             <span class="font-semibold text-pink-600">Shirley (2025年1月底生)</span> 乾性FIP紀錄 - 追蹤日期：<span id="current-date"></span>
         </p>
-
+        
         <!-- Navigation Tabs -->
         <div class="flex border-b border-gray-200 mb-6">
-            <button id="tab-tracker" onclick="showView('tracker')" class="px-4 py-2 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 focus:outline-none">
+            <button id="tab-tracker" onclick="showView('tracker')" class="px-4 py-2 text-sm font-medium border-b-2 border-green-500 text-green-600 focus:outline-none">
                 每日紀錄
             </button>
-            <button id="tab-summary" onclick="showView('summary')" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-indigo-600 hover:border-indigo-500 focus:outline-none">
+            <button id="tab-summary" onclick="showView('summary')" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-green-600 hover:border-green-500 focus:outline-none">
                 歷史總結
             </button>
-            <button id="tab-ai-report" onclick="showView('ai-report')" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-indigo-600 hover:border-indigo-500 focus:outline-none">
-                AI 報告分析
+            <button id="tab-report" onclick="showView('report')" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-green-600 hover:border-green-500 focus:outline-none">
+                報告/圖片儲存 (本機)
             </button>
         </div>
 
-        <!-- FIREBASE INITIALIZATION MESSAGE -->
-        <div id="auth-status" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded-lg hidden" role="alert">
-            <p class="font-bold">連線中...</p>
-            <p>正在初始化Firebase資料庫與身份驗證。</p>
+        <!-- LOCAL STORAGE STATUS MESSAGE -->
+        <div id="auth-status" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded-lg" role="alert">
+            <p class="font-bold">本地儲存啟用！</p>
+            <p>紀錄僅儲存在您的瀏覽器中。請注意備份。</p>
         </div>
 
         <!-- 1. DAILY TRACKER VIEW -->
         <div id="tracker-view">
-            <form id="record-form" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg shadow-inner bg-indigo-50">
+            <form id="record-form" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg shadow-inner bg-green-50">
                 
                 <div class="md:col-span-2">
                     <label for="recordDate" class="block text-sm font-medium text-gray-700 mb-1">紀錄日期 <span class="text-red-500">*</span></label>
                     <input type="date" id="recordDate" required>
                 </div>
 
-                <!-- 飲食 -->
+                <!-- 飲食狀況 (種類) -->
                 <div>
-                    <label for="diet" class="block text-sm font-medium text-gray-700 mb-1">飲食狀況</label>
+                    <label for="diet" class="block text-sm font-medium text-gray-700 mb-1">飲食狀況 (種類)</label>
                     <select id="diet" required>
                         <option value="濕糧">濕糧 (Wet Food)</option>
                         <option value="乾糧">乾糧 (Dry Food)</option>
                         <option value="急救糧">急救糧/餵食 (Critical Care/Syringe)</option>
                         <option value="拒食">完全拒食</option>
                     </select>
+                </div>
+                
+                <!-- 飲食份量 (新增) -->
+                <div>
+                    <label for="dietQuantity" class="block text-sm font-medium text-gray-700 mb-1">飲食份量 (g/ml/份)</label>
+                    <input type="number" id="dietQuantity" step="0.1" min="0" placeholder="例如：100 (g) 或 5 (ml)">
                 </div>
 
                 <!-- 體重 -->
@@ -116,7 +133,7 @@
                     </select>
                 </div>
 
-                <!-- 發燒與否 -->
+                <!-- 發燒與否 (主指標) -->
                 <div class="flex items-center space-x-4">
                     <label for="hasFever" class="block text-sm font-medium text-gray-700 mb-1">發燒狀態 (體溫 > 39.2°C)</label>
                     <input type="checkbox" id="hasFever" class="h-5 w-5 text-red-600 border-gray-300 rounded focus:ring-red-500">
@@ -125,14 +142,36 @@
                 
                 <!-- 藥物 ml & 時間 -->
                 <div>
-                    <label for="medicationMl" class="block text-sm font-medium text-gray-700 mb-1">藥物劑量 (ml)</label>
+                    <label for="medicationMl" class="block text-sm font-medium text-gray-700 mb-1">主藥物劑量 (ml) <span class="text-gray-400">(如GS-441524)</span></label>
                     <input type="number" id="medicationMl" step="0.01" min="0" placeholder="例如：2.0">
                 </div>
                 <div>
-                    <label for="medicationTime" class="block text-sm font-medium text-gray-700 mb-1">藥物時間</label>
+                    <label for="medicationTime" class="block text-sm font-medium text-gray-700 mb-1">主藥物時間</label>
                     <input type="time" id="medicationTime">
                 </div>
+
+                <!-- 新增：貧血藥 -->
+                <div class="flex items-center space-x-4">
+                    <label for="medAnemia" class="block text-sm font-medium text-gray-700 mb-1">貧血藥 (Anemia Med)</label>
+                    <input type="checkbox" id="medAnemia" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                </div>
+
+                <!-- 新增：免疫力藥 -->
+                <div class="flex items-center space-x-4">
+                    <label for="medImmunity" class="block text-sm font-medium text-gray-700 mb-1">免疫力藥 (Immunity Booster)</label>
+                    <input type="checkbox" id="medImmunity" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                </div>
                 
+                <!-- 新增：開胃藥 (位置) -->
+                <div>
+                    <label for="medAppetite" class="block text-sm font-medium text-gray-700 mb-1">開胃藥 (塗抹位置)</label>
+                    <select id="medAppetite" required>
+                        <option value="無">無 (Not Given)</option>
+                        <option value="左耳">左耳 (Left Ear)</option>
+                        <option value="右耳">右耳 (Right Ear)</option>
+                    </select>
+                </div>
+
                 <!-- 其他備註 -->
                 <div class="md:col-span-2">
                     <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">其他必須的項目與備註</label>
@@ -141,17 +180,17 @@
 
                 <!-- Submit Button -->
                 <div class="md:col-span-2">
-                    <button type="submit" id="saveButton" class="w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md">
-                        💾 儲存今日紀錄
+                    <button type="submit" id="saveButton" class="w-full py-3 px-4 bg-green-600 text-white font-bold rounded-lg transition duration-150 shadow-md hover:bg-green-700">
+                        💾 儲存今日紀錄 (本機)
                     </button>
                     <div id="saveMessage" class="mt-3 text-center text-sm font-medium text-green-600 hidden">紀錄已成功儲存！</div>
                 </div>
             </form>
         </div>
 
-        <!-- 2. SUMMARY/HISTORY VIEW -->
+        <!-- 2. SUMMARY/HISTORY VIEW (Updated to include new fields) -->
         <div id="summary-view" class="hidden">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">歷史數據總結 (最近30天)</h2>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">歷史數據總結 (本機儲存)</h2>
             <div class="overflow-x-auto custom-scroll max-h-[60vh]">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
@@ -160,13 +199,14 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">體重 (kg)</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">變化</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">飲食/精神</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">發燒/用藥</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">發燒/主藥劑量</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">其他藥物</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">備註</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
                     <tbody id="summaryTableBody" class="bg-white divide-y divide-gray-200">
                         <!-- Data will be injected here -->
-                        <tr><td colspan="6" class="p-6 text-center text-gray-500">尚無紀錄。請前往「每日紀錄」輸入數據。</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -177,48 +217,52 @@
             </p>
         </div>
 
-        <!-- 3. AI REPORT ANALYSIS VIEW -->
-        <div id="ai-report-view" class="hidden p-4 border rounded-lg shadow-inner bg-purple-50">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">🩺 AI 血液報告分析</h2>
+        <!-- 3. REPORT/IMAGE STORAGE VIEW -->
+        <div id="report-view" class="hidden p-4 border rounded-lg shadow-inner bg-blue-50">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">🖼️ 報告圖片/檔案管理 (僅本機)</h2>
             <p class="text-sm text-gray-600 mb-4">
-                上傳您醫生的驗血報告圖片（例如：JPG, PNG）。AI會扮演資深獸醫角色，為您分析與FIP病情相關的關鍵數值。
+                您可以選擇報告圖片（例如：驗血報告、超音波圖等）或任何檔案。
+                <span class="font-bold text-red-600">重要提醒：由於採用瀏覽器本機儲存，此功能無法真正將檔案永久儲存或上傳。它僅用於暫時查看檔案資訊。</span>
             </p>
 
-            <input type="file" id="reportFile" accept="image/*" class="w-full mb-4 p-2 border rounded-lg bg-white">
-            <button onclick="analyzeReport()" id="analyzeButton" class="w-full py-3 px-4 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition duration-150 shadow-md">
-                🧠 開始AI分析
-            </button>
-
-            <div id="analysisResult" class="mt-6 p-4 bg-white border border-purple-200 rounded-lg shadow-inner min-h-32">
-                <p class="text-gray-500 text-center" id="analysisPlaceholder">分析結果將顯示在此處。</p>
-                <div id="loadingIndicator" class="text-center hidden">
-                    <p class="text-purple-600 font-semibold flex items-center justify-center">
-                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        正在讀取報告並進行FIP專業分析，請稍候...
-                    </p>
-                </div>
+            <input type="file" id="reportFile" class="w-full mb-4 p-2 border rounded-lg bg-white">
+            
+            <div id="fileInfo" class="mt-6 p-4 bg-white border border-blue-200 rounded-lg shadow-inner min-h-20">
+                <p class="text-gray-500 text-center">檔案資訊將顯示在此處。</p>
             </div>
         </div>
         
     </div>
 
-    <!-- Firebase Scripts -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- Custom Alert Modal (for non-confirmation messages) -->
+    <div id="temp-alert-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 hidden">
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-80 m-4">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">提示</h3>
+            <p id="alert-message" class="text-gray-600 mb-6"></p>
+            <div class="flex justify-end">
+                <button id="modal-ok" class="py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">確定</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Custom Confirm Modal (for deletion) -->
+    <div id="temp-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 hidden">
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-80 m-4">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">操作確認</h3>
+            <p id="modal-message" class="text-gray-600 mb-6"></p>
+            <div class="flex justify-end space-x-3">
+                <button id="modal-cancel" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">取消</button>
+                <button id="modal-confirm" class="py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">確定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Local Storage Scripts -->
+    <script>
+        
         // Global State & Constants
         const CONSTANTS = {
-            APP_ID: typeof __app_id !== 'undefined' ? __app_id : 'default-fip-tracker',
-            COLLECTION_NAME: 'shirley_fip_records',
-            MODEL_NAME: 'gemini-2.5-flash-preview-09-2025',
-            API_URL_BASE: 'https://generativelanguage.googleapis.com/v1beta/models/',
-            API_KEY: "" // The Canvas environment provides this at runtime
+            LOCAL_STORAGE_KEY: 'shirley_fip_records_local', // 儲存在 localStorage 的 key
         };
         
         const DOM = {
@@ -227,152 +271,158 @@
             saveButton: document.getElementById('saveButton'),
             saveMessage: document.getElementById('saveMessage'),
             authStatus: document.getElementById('auth-status'),
-            reportFile: document.getElementById('reportFile'),
-            analysisResult: document.getElementById('analysisResult'),
-            loadingIndicator: document.getElementById('loadingIndicator'),
-            analysisPlaceholder: document.getElementById('analysisPlaceholder'),
+            reportFile: document.getElementById('reportFile'), // Kept for image storage feature
+            fileInfo: document.getElementById('fileInfo'), // New DOM element for file info
             feverStatus: document.getElementById('fever-status'),
             hasFever: document.getElementById('hasFever'),
         };
 
-        let firebaseState = {
-            db: null,
-            auth: null,
-            userId: null,
-            records: [], // Stored array of daily records
-        };
+        let localRecords = []; // 儲存在記憶體中的每日紀錄
 
-        // --- Core Firebase & Auth Setup ---
+        // --- Utility Functions for Modals ---
 
         /**
-         * 執行Firebase初始化與使用者身份驗證
+         * Custom alert for non-blocking messages (replaces window.alert)
+         * @param {string} message - Message to display
          */
-        async function setupFirebase() {
-            DOM.authStatus.classList.remove('hidden');
-            try {
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                const app = initializeApp(firebaseConfig);
-                firebaseState.db = getFirestore(app);
-                firebaseState.auth = getAuth(app);
-                setLogLevel('debug'); // 啟用Firestore debug log
-
-                const auth = firebaseState.auth;
-                
-                // 嘗試使用提供的token登入，否則使用匿名登入
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                // 監聽身份驗證狀態，設定userId
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        firebaseState.userId = user.uid;
-                        DOM.authStatus.classList.add('hidden');
-                        console.log("Firebase Auth Ready. User ID:", firebaseState.userId);
-                        // Auth ready, start listening for data
-                        startDataListener();
-                    } else {
-                        // Should not happen in Canvas, but handle sign-out scenario
-                        firebaseState.userId = null;
-                        DOM.authStatus.innerHTML = '<p class="font-bold">連線失敗</p><p>請確保環境正確。</p>';
-                        DOM.authStatus.classList.remove('hidden');
-                    }
-                });
-
-            } catch (error) {
-                console.error("Firebase Initialization Error:", error);
-                DOM.authStatus.innerHTML = `<p class="font-bold">連線錯誤</p><p>錯誤訊息: ${error.message}</p>`;
-                DOM.authStatus.classList.remove('hidden');
-            }
-        }
-
-        // --- Data Persistence (Firestore) ---
-
-        /**
-         * 取得Firestore Collection參考路徑
-         * @returns {string} Firestore Collection Path
-         */
-        function getCollectionPath() {
-            const userId = firebaseState.userId || 'anonymous-user';
-            return `/artifacts/${CONSTANTS.APP_ID}/users/${userId}/${CONSTANTS.COLLECTION_NAME}`;
+        function customAlert(message) {
+             const modal = document.getElementById('temp-alert-modal');
+             if (!modal) return;
+             
+             document.getElementById('alert-message').textContent = message;
+             modal.classList.remove('hidden');
+             
+             document.getElementById('modal-ok').onclick = () => {
+                 modal.classList.add('hidden');
+             };
         }
 
         /**
-         * 啟動Firestore即時監聽 (onSnapshot)
+         * Custom confirm function for deletion (replaces window.confirm)
+         * @param {string} message - Message to display
+         * @returns {Promise<boolean>}
          */
-        function startDataListener() {
-            if (!firebaseState.db || !firebaseState.userId) return;
+         function customConfirmDelete(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('temp-confirm-modal');
+                if (!modal) return resolve(false);
 
-            const recordsRef = collection(firebaseState.db, getCollectionPath());
-            
-            // 監聽資料變化
-            onSnapshot(recordsRef, (snapshot) => {
-                const fetchedRecords = [];
-                snapshot.forEach(doc => {
-                    fetchedRecords.push(doc.data());
-                });
+                document.getElementById('modal-message').textContent = message;
+                modal.classList.remove('hidden');
                 
-                // 依照日期降冪排序 (新到舊)
-                firebaseState.records = fetchedRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-                renderRecords(firebaseState.records);
-            }, (error) => {
-                console.error("Firestore Snapshot Error:", error);
-                // 顯示錯誤給用戶
-                DOM.summaryTableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500">載入歷史紀錄失敗: ${error.message}</td></tr>`;
+                document.getElementById('modal-cancel').onclick = () => {
+                    modal.classList.add('hidden');
+                    resolve(false);
+                };
+                
+                document.getElementById('modal-confirm').onclick = () => {
+                    modal.classList.add('hidden');
+                    resolve(true);
+                };
             });
         }
 
+
+        // --- Local Storage Functions ---
+
         /**
-         * 儲存每日紀錄到Firestore
+         * 從 localStorage 載入紀錄到 memory
          */
-        async function saveRecord(event) {
+        function loadRecords() {
+            try {
+                const json = localStorage.getItem(CONSTANTS.LOCAL_STORAGE_KEY);
+                localRecords = json ? JSON.parse(json) : [];
+                // 確保數據是依照日期降冪排序 (新到舊)
+                localRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderRecords(localRecords);
+            } catch (e) {
+                console.error("Error loading records from localStorage:", e);
+                customAlert('載入舊紀錄失敗，可能是儲存資料損壞。將重新開始紀錄。');
+                localRecords = [];
+                renderRecords([]);
+            }
+        }
+
+        /**
+         * 將記憶體中的紀錄存回 localStorage
+         */
+        function saveLocalRecords() {
+            try {
+                localStorage.setItem(CONSTANTS.LOCAL_STORAGE_KEY, JSON.stringify(localRecords));
+            } catch (e) {
+                console.error("Error saving records to localStorage:", e);
+                customAlert('儲存紀錄失敗，可能是您的瀏覽器空間不足。');
+            }
+        }
+
+        /**
+         * 儲存每日紀錄到 localStorage
+         */
+        function saveRecord(event) {
             event.preventDefault();
             
-            if (!firebaseState.db || !firebaseState.userId) {
-                console.error("Database not initialized or user not logged in.");
-                return;
-            }
-
             const recordDate = document.getElementById('recordDate').value;
-            const weight = parseFloat(document.getElementById('weight').value);
+            const weightInput = document.getElementById('weight');
+            const weight = parseFloat(weightInput.value);
             
-            if (!recordDate || isNaN(weight)) {
-                alert('請輸入有效的日期和體重。');
+            // 處理飲食份量，如果不是數字就當作 0
+            const dietQuantity = parseFloat(document.getElementById('dietQuantity').value) || 0;
+            
+            if (!recordDate || isNaN(weight) || weight <= 0) {
+                customAlert('請輸入有效的日期和體重（必須大於 0 kg）。');
+                weightInput.focus();
                 return;
             }
 
             const newRecord = {
-                date: recordDate,
+                // 使用 date 作為紀錄的唯一識別符
+                id: recordDate, 
+                date: recordDate, 
                 diet: document.getElementById('diet').value,
+                dietQuantity: dietQuantity, // 儲存飲食份量
                 weight: weight,
                 spirit: document.getElementById('spirit').value,
                 movement: document.getElementById('movement').value,
                 hasFever: DOM.hasFever.checked,
+                
+                // 藥物追蹤項目
+                medAnemia: document.getElementById('medAnemia').checked,
+                medImmunity: document.getElementById('medImmunity').checked,
+                medAppetite: document.getElementById('medAppetite').value, // 儲存 '無', '左耳', or '右耳'
+
                 medicationMl: parseFloat(document.getElementById('medicationMl').value) || 0,
                 medicationTime: document.getElementById('medicationTime').value || '',
                 notes: document.getElementById('notes').value.trim() || '無',
                 lastUpdated: new Date().toISOString()
             };
 
-            const docRef = doc(firebaseState.db, getCollectionPath(), recordDate);
-            DOM.saveButton.textContent = '儲存中...';
-            DOM.saveButton.disabled = true;
+            // 檢查是否為更新現有紀錄
+            const existingIndex = localRecords.findIndex(r => r.date === recordDate);
 
-            try {
-                await setDoc(docRef, newRecord);
-                
-                DOM.saveMessage.classList.remove('hidden');
-                setTimeout(() => DOM.saveMessage.classList.add('hidden'), 3000);
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                // 應使用自定義Modal顯示錯誤
-                alert(`儲存失敗: ${e.message}`);
-            } finally {
-                DOM.saveButton.textContent = '💾 儲存今日紀錄';
-                DOM.saveButton.disabled = false;
+            if (existingIndex !== -1) {
+                // 更新現有紀錄
+                localRecords[existingIndex] = newRecord;
+                console.log(`Updated record for ${recordDate}`);
+            } else {
+                // 新增紀錄
+                localRecords.push(newRecord);
+                console.log(`Added new record for ${recordDate}`);
             }
+
+            // 重新排序並儲存
+            localRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveLocalRecords();
+            renderRecords(localRecords);
+            
+            DOM.saveMessage.classList.remove('hidden');
+            
+            // 清空部分輸入欄位，方便輸入下一次紀錄
+            document.getElementById('weight').value = '';
+            document.getElementById('medicationMl').value = '';
+            document.getElementById('dietQuantity').value = ''; // 清空份量
+            document.getElementById('notes').value = '';
+
+            setTimeout(() => DOM.saveMessage.classList.add('hidden'), 3000);
         }
 
         /**
@@ -380,39 +430,34 @@
          * @param {string} date - 紀錄的日期 (作為Document ID)
          */
         async function deleteRecord(date) {
-            if (!firebaseState.db || !firebaseState.userId) return;
-
-            // 使用客製化Modal取代alert()
-            const confirmDelete = await customConfirm(`確定要刪除 ${date} 的紀錄嗎？`);
+            
+            const confirmDelete = await customConfirmDelete(`確定要刪除 ${date} 的紀錄嗎？`);
             if (!confirmDelete) return;
 
-            const docRef = doc(firebaseState.db, getCollectionPath(), date);
-            try {
-                await deleteDoc(docRef);
-                // Data listener will automatically update the UI
-            } catch (error) {
-                console.error("Error removing document: ", error);
-                // 應使用自定義Modal顯示錯誤
-                alert(`刪除失敗: ${error.message}`);
-            }
+            // 過濾掉要刪除的紀錄
+            localRecords = localRecords.filter(r => r.date !== date);
+            
+            saveLocalRecords();
+            renderRecords(localRecords);
+            console.log(`Deleted record for ${date}`);
         }
 
         // --- UI Rendering ---
         
         /**
          * 渲染歷史紀錄表格
-         * @param {Array<Object>} records - 已排序的每日紀錄
+         * @param {Array<Object>} records - 已排序 (新到舊) 的每日紀錄
          */
         function renderRecords(records) {
             if (records.length === 0) {
-                DOM.summaryTableBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">尚無紀錄。</td></tr>';
+                DOM.summaryTableBody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500">尚無紀錄。請前往「每日紀錄」輸入數據。</td></tr>';
                 return;
             }
 
             let html = '';
-            // 由於records已是新到舊排序，我們需要反向迭代來計算「前一天」的數值
+            // 由於 records 已是新到舊排序，我們需要反向迭代來計算「前一天」的數值，然後再以新到舊的順序渲染
             const sortedByOldest = [...records].reverse();
-            const newestRecords = [];
+            const newestRecordsWithChange = []; 
 
             for (let i = 0; i < sortedByOldest.length; i++) {
                 const current = sortedByOldest[i];
@@ -420,64 +465,80 @@
                 let changeColor = 'text-gray-500';
                 let changeIcon = '=';
 
-                // 找到前一天的有效體重 (只比較前一筆紀錄)
+                // 找到前一天的有效體重 (前一個元素)
                 if (i > 0) {
                     const previous = sortedByOldest[i - 1];
+                    // 計算體重變化
                     weightChange = current.weight - previous.weight;
                     
-                    if (weightChange > 0) {
+                    if (weightChange > 0.01) { 
                         changeColor = 'text-green-600 font-bold';
                         changeIcon = '▲';
-                    } else if (weightChange < 0) {
+                    } else if (weightChange < -0.01) { 
                         changeColor = 'text-red-600 font-bold';
                         changeIcon = '▼';
                     }
                 }
                 
-                current.weightChange = weightChange.toFixed(2);
-                current.changeColor = changeColor;
-                current.changeIcon = changeIcon;
-                newestRecords.unshift(current); // 放回新到舊的順序
+                // 將計算結果儲存起來
+                const recordWithChange = {
+                    ...current,
+                    weightChange: weightChange.toFixed(2),
+                    changeColor: changeColor,
+                    changeIcon: changeIcon
+                };
+                newestRecordsWithChange.unshift(recordWithChange); // 放回新到舊的順序
             }
             
-            // 重新渲染新到舊的數據
-            html = newestRecords.map(record => `
+            // 渲染表格
+            html = newestRecordsWithChange.map(record => {
+                // 格式化飲食狀況 (包含份量)
+                const dietDisplay = `${record.diet}` + 
+                                    (record.dietQuantity > 0 ? `<br><span class="text-xs text-gray-400">(${record.dietQuantity} 量)</span>` : '');
+
+                return `
                 <tr class="${record.hasFever ? 'bg-red-50/70 hover:bg-red-100/70' : 'hover:bg-gray-50'} transition duration-100">
                     <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${record.date}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">${record.weight.toFixed(2)} kg</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm ${record.changeColor}">
-                        ${record.changeIcon} ${record.weightChange !== '0.00' ? Math.abs(parseFloat(record.weightChange)) : ''}
+                        ${record.changeIcon} ${record.changeIcon !== '=' ? Math.abs(parseFloat(record.weightChange)).toFixed(2) : '0.00'}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">
+                        ${dietDisplay} / ${record.spirit}
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                        ${record.diet} / ${record.spirit}
+                        ${record.hasFever ? '<span class="text-red-500 font-bold">發燒 Yes</span>' : '無發燒 No'}<br>
+                        ${record.medicationMl > 0 ? `${record.medicationMl.toFixed(2)} ml @ ${record.medicationTime}` : '無主藥'}
                     </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                        ${record.hasFever ? '<span class="text-red-500 font-bold">發燒 Yes</span>' : '無發燒 No'} / 
-                        ${record.medicationMl > 0 ? `${record.medicationMl} ml @ ${record.medicationTime}` : '無用藥'}
+                    <td class="px-4 py-3 text-sm text-gray-600">
+                        ${record.medAnemia ? '貧血藥 <span class="text-indigo-600">✔️</span><br>' : ''}
+                        ${record.medImmunity ? '免疫力藥 <span class="text-indigo-600">✔️</span><br>' : ''}
+                        ${record.medAppetite !== '無' ? `開胃藥 (${record.medAppetite})` : '無開胃藥'}
                     </td>
+                    <td class="px-4 py-3 text-sm text-gray-600 notes-cell">${record.notes}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                         <button onclick="deleteRecord('${record.date}')" class="text-red-500 hover:text-red-700 font-medium text-xs rounded-full p-1 transition duration-150">
                             🗑️ 刪除
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
 
             DOM.summaryTableBody.innerHTML = html;
         }
 
         /**
          * 顯示指定的視圖並更新Tab樣式
-         * @param {string} viewId - 要顯示的視圖ID ('tracker', 'summary', 'ai-report')
+         * @param {string} viewId - 要顯示的視圖ID ('tracker', 'summary', 'report')
          */
         window.showView = function(viewId) {
-            ['tracker', 'summary', 'ai-report'].forEach(id => {
+            ['tracker', 'summary', 'report'].forEach(id => { 
                 const view = document.getElementById(`${id}-view`);
                 const tab = document.getElementById(`tab-${id}`);
                 if (view) view.classList.add('hidden');
                 if (tab) {
-                    tab.classList.remove('border-indigo-500', 'text-indigo-600');
-                    tab.classList.add('text-gray-500', 'hover:text-indigo-600', 'hover:border-indigo-500');
+                    tab.classList.remove('border-green-500', 'text-green-600');
+                    tab.classList.add('text-gray-500', 'hover:text-green-600', 'hover:border-green-500');
                 }
             });
 
@@ -486,8 +547,13 @@
             
             if (activeView) activeView.classList.remove('hidden');
             if (activeTab) {
-                activeTab.classList.add('border-indigo-500', 'text-indigo-600');
-                activeTab.classList.remove('text-gray-500', 'hover:text-indigo-600', 'hover:border-indigo-500');
+                activeTab.classList.add('border-green-500', 'text-green-600');
+                activeTab.classList.remove('text-gray-500', 'hover:text-green-600', 'hover:border-green-500');
+            }
+
+            // 確保切換到 summary 時數據是最新的
+            if (viewId === 'summary') {
+                loadRecords();
             }
         }
 
@@ -506,165 +572,25 @@
             }
         });
         
-        /**
-         * Custom confirm function to avoid alert()
-         * NOTE: For simplicity in a single-file demo, we use a basic confirmation model.
-         */
-         function customConfirm(message) {
-            return new Promise((resolve) => {
-                const modalId = 'temp-confirm-modal';
-                let modal = document.getElementById(modalId);
-                
-                if (!modal) {
-                    modal = document.createElement('div');
-                    modal.id = modalId;
-                    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 hidden';
-                    modal.innerHTML = `
-                        <div class="bg-white rounded-lg shadow-2xl p-6 w-80 m-4">
-                            <h3 class="text-lg font-bold mb-4 text-gray-800">操作確認</h3>
-                            <p id="modal-message" class="text-gray-600 mb-6"></p>
-                            <div class="flex justify-end space-x-3">
-                                <button id="modal-cancel" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">取消</button>
-                                <button id="modal-confirm" class="py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">確定</button>
-                            </div>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-                }
-
-                document.getElementById('modal-message').textContent = message;
-                modal.classList.remove('hidden');
-                
-                document.getElementById('modal-cancel').onclick = () => {
-                    modal.classList.add('hidden');
-                    resolve(false);
-                };
-                
-                document.getElementById('modal-confirm').onclick = () => {
-                    modal.classList.add('hidden');
-                    resolve(true);
-                };
-            });
-        }
-
-        // --- Gemini AI Integration ---
-
-        /**
-         * 將檔案讀取為 Base64 字符串
-         * @param {File} file - 輸入的檔案物件
-         * @returns {Promise<string>} Base64 data string
-         */
-        function readFileAsBase64(file) {
-            return new Promise((resolve, reject) => {
-                if (!file) return resolve('');
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]); // 移除 mime type 前綴
-                reader.onerror = error => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
-
-        /**
-         * 呼叫 Gemini API 進行報告分析
-         */
-        window.analyzeReport = async function() {
-            const file = DOM.reportFile.files[0];
-            if (!file) {
-                alert('請先選擇一份驗血報告圖片檔案。');
-                return;
-            }
-
-            DOM.analysisPlaceholder.classList.add('hidden');
-            DOM.loadingIndicator.classList.remove('hidden');
-            const analyzeButton = document.getElementById('analyzeButton');
-            analyzeButton.disabled = true;
-
-            try {
-                const base64Data = await readFileAsBase64(file);
-                const mimeType = file.type;
-
-                const systemPrompt = `你是一位擁有20年經驗的FIP專業獸醫分析師。請分析上傳的驗血報告圖片。你的分析應以繁體中文輸出，並必須重點關注與貓傳染性腹膜炎（FIP）病情及治療反應相關的關鍵指標，包括：
-1.  **A/G比** (白蛋白/球蛋白比例) - 這是FIP的經典指標。
-2.  **球蛋白** (Globulin) 總量 - 通常在FIP中升高。
-3.  **淋巴細胞** (Lymphocytes) - 淋巴細胞減少症 (Lymphopenia) 是常見表現。
-4.  **總膽紅素** (Total Bilirubin) - 升高可能預示肝臟受損或黃疸。
-
-請清晰地總結：1. 關鍵發現 (條列式)，2. 專業獸醫建議 (一段總結性文字)。`;
-                
-                const userQuery = `請基於這隻名為Shirley的緬因貓女，結合其乾性FIP的現況，分析這份血液報告。`;
-
-                const payload = {
-                    contents: [{
-                        role: "user",
-                        parts: [
-                            { text: userQuery },
-                            {
-                                inlineData: {
-                                    mimeType: mimeType,
-                                    data: base64Data
-                                }
-                            }
-                        ]
-                    }],
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    },
-                };
-
-                const apiUrl = `${CONSTANTS.API_URL_BASE}${CONSTANTS.MODEL_NAME}:generateContent?key=${CONSTANTS.API_KEY}`;
-                
-                let response;
-                let attempts = 0;
-                const maxAttempts = 5;
-                const baseDelay = 1000;
-
-                while (attempts < maxAttempts) {
-                    try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-
-                        if (response.status === 429) {
-                            attempts++;
-                            const delay = baseDelay * Math.pow(2, attempts - 1) + Math.random() * 1000;
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            continue;
-                        }
-
-                        if (!response.ok) {
-                             throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-
-                        break; // Success
-                    } catch (e) {
-                         // Non-429 errors or network issues
-                         if (attempts === maxAttempts - 1) throw e;
-                         attempts++;
-                         await new Promise(resolve => setTimeout(resolve, baseDelay));
+        // --- Report/Image File Info Handler ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (DOM.reportFile) {
+                DOM.reportFile.addEventListener('change', () => {
+                    const file = DOM.reportFile.files[0];
+                    if (file) {
+                        DOM.fileInfo.innerHTML = `
+                            <p class="font-semibold text-gray-800">✅ 已選擇檔案：${file.name}</p>
+                            <p class="text-sm text-gray-600">類型：${file.type}</p>
+                            <p class="text-sm text-gray-600">大小：${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <p class="text-sm text-red-500 font-medium mt-1">注意：此檔案僅顯示資訊，並未永久儲存到網路上或本機儲存空間。</p>
+                        `;
+                    } else {
+                        DOM.fileInfo.innerHTML = `<p class="text-gray-500 text-center">檔案資訊將顯示在此處。</p>`;
                     }
-                }
-                
-                const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "AI未能生成有效分析結果。請檢查圖片清晰度或再試一次。";
-
-                // Convert markdown response to HTML for display
-                const analysisHtml = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-                                         .replace(/\n/g, '<br>') // Newlines
-                                         .replace(/<br>\s*<br>/g, '</p><p class="mt-2 text-gray-700">'); // Paragraphs
-                
-                DOM.analysisResult.innerHTML = `<p class="text-gray-700">${analysisHtml}</p>`;
-
-            } catch (error) {
-                console.error("AI Analysis Error:", error);
-                DOM.analysisResult.innerHTML = `<p class="text-red-500 font-semibold">分析發生錯誤，請稍後再試。錯誤詳情：${error.message}</p>`;
-            } finally {
-                DOM.loadingIndicator.classList.add('hidden');
-                analyzeButton.disabled = false;
+                });
             }
-        }
-
+        });
+        
         // --- Initialization ---
 
         window.onload = function () {
@@ -674,14 +600,14 @@
             document.getElementById('current-date').textContent = today.replace(/-/g, '/');
 
             DOM.recordForm.addEventListener('submit', saveRecord);
+            
+            // 載入 localStorage 數據
+            loadRecords();
 
             // Set initial view
             showView('tracker');
             
-            // Start Firebase setup
-            setupFirebase();
-            
-            // Expose deleteRecord to the global scope for button click
+            // Expose functions to the global scope for button click
             window.deleteRecord = deleteRecord;
         };
     </script>
