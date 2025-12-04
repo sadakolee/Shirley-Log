@@ -3,613 +3,675 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shirley FIP 乾性腹膜炎追蹤紀錄 (本機版)</title>
-    <!-- Tailwind CSS CDN for modern, responsive styling -->
+    <title>Shirley FIP 乾性腹膜炎追蹤</title>
+    <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f7f9;
-        }
-        /* Custom scrollbar for better look */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background-color: #a8a8a8;
-            border-radius: 3px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background-color: #f0f0f0;
-        }
-        /* General input styling */
-        input[type="number"], input[type="text"], input[type="date"], input[type="time"], select, textarea {
-            border: 1px solid #e2e8f0;
-            padding: 10px;
-            border-radius: 8px;
-            width: 100%;
-            transition: all 0.2s;
-        }
-        input:focus, select:focus, textarea:focus {
-            border-color: #10b981; /* 綠色，代表本機連線成功 */
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-            outline: none;
-        }
-        /* New styling for medication checkboxes */
-        input[type="checkbox"] {
-            transform: scale(1.2);
-            cursor: pointer;
-        }
-        /* Styling for the notes column to allow wrapping */
-        .notes-cell {
-            white-space: normal;
-            word-break: break-all;
-            max-width: 150px; /* Limit width for table readability */
-        }
+        /* 自訂樣式 */
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .tab-button.active { border-bottom: 3px solid #10b981; font-weight: 600; color: #10b981; }
+        .card { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); }
+        /* 隱藏預設滾動條並使用自訂滾動條樣式 (針對支援的瀏覽器) */
+        .overflow-x-auto::-webkit-scrollbar { height: 8px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .overflow-x-auto::-webkit-scrollbar-track { background: #f1f5f9; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <!-- Main Application Container -->
-    <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-xl p-6 md:p-10">
-
-        <h1 class="text-3xl md:text-4xl font-extrabold text-green-700 mb-2">
-            Shirley 緬因貓 FIP 追蹤 (本機版)
-        </h1>
-        <p class="text-gray-600 mb-6">
-            <span class="font-semibold text-pink-600">Shirley (2025年1月底生)</span> 乾性FIP紀錄 - 追蹤日期：<span id="current-date"></span>
+    <header class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-1">Shirley 乾性 FIP 追蹤</h1>
+        <p class="text-sm text-gray-500">
+            緬因貓女 | 出生日期: 2025年1月尾 (約 <span id="cat-age"></span>) | 確診日期: 2025年12月2日
         </p>
-        
-        <!-- Navigation Tabs -->
-        <div class="flex border-b border-gray-200 mb-6">
-            <button id="tab-tracker" onclick="showView('tracker')" class="px-4 py-2 text-sm font-medium border-b-2 border-green-500 text-green-600 focus:outline-none">
-                每日紀錄
-            </button>
-            <button id="tab-summary" onclick="showView('summary')" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-green-600 hover:border-green-500 focus:outline-none">
-                歷史總結
-            </button>
-            <button id="tab-report" onclick="showView('report')" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-green-600 hover:border-green-500 focus:outline-none">
-                報告/圖片儲存 (本機)
-            </button>
-        </div>
+    </header>
 
-        <!-- LOCAL STORAGE STATUS MESSAGE -->
-        <div id="auth-status" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded-lg" role="alert">
-            <p class="font-bold">本地儲存啟用！</p>
-            <p>紀錄僅儲存在您的瀏覽器中。請注意備份。</p>
-        </div>
+    <!-- 頁籤導航 -->
+    <div class="flex border-b border-gray-200 mb-6">
+        <button id="tab-daily" class="tab-button active px-4 py-2 text-lg text-gray-600 transition duration-150 ease-in-out" onclick="switchTab('daily')">
+            每日健康追蹤
+        </button>
+        <button id="tab-blood" class="tab-button px-4 py-2 text-lg text-gray-600 transition duration-150 ease-in-out" onclick="switchTab('blood')">
+            重要血檢記錄
+        </button>
+    </div>
 
-        <!-- 1. DAILY TRACKER VIEW -->
-        <div id="tracker-view">
-            <form id="record-form" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg shadow-inner bg-green-50">
-                
-                <div class="md:col-span-2">
-                    <label for="recordDate" class="block text-sm font-medium text-gray-700 mb-1">紀錄日期 <span class="text-red-500">*</span></label>
-                    <input type="date" id="recordDate" required>
-                </div>
+    <!-- 每日健康追蹤頁籤內容 -->
+    <div id="daily-tracker" class="tab-content">
 
-                <!-- 飲食狀況 (種類) -->
-                <div>
-                    <label for="diet" class="block text-sm font-medium text-gray-700 mb-1">飲食狀況 (種類)</label>
-                    <select id="diet" required>
-                        <option value="濕糧">濕糧 (Wet Food)</option>
-                        <option value="乾糧">乾糧 (Dry Food)</option>
-                        <option value="急救糧">急救糧/餵食 (Critical Care/Syringe)</option>
-                        <option value="拒食">完全拒食</option>
-                    </select>
+        <!-- 記錄表單 -->
+        <section class="card bg-white p-6 rounded-xl mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">今日記錄 (<span id="today-date"></span>)</h2>
+            <form id="daily-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- 必備項目：日期 -->
+                <div class="col-span-1">
+                    <label for="recordDate" class="block text-sm font-medium text-gray-700">選擇記錄日期</label>
+                    <input type="date" id="recordDate" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2 border">
                 </div>
                 
-                <!-- 飲食份量 (新增) -->
-                <div>
-                    <label for="dietQuantity" class="block text-sm font-medium text-gray-700 mb-1">飲食份量 (g/ml/份)</label>
-                    <input type="number" id="dietQuantity" step="0.1" min="0" placeholder="例如：100 (g) 或 5 (ml)">
+                <!-- 核心項目：體重 -->
+                <div class="col-span-1">
+                    <label for="weight" class="block text-sm font-medium text-gray-700">體重 (克, g) <span class="text-xs text-red-500">*</span></label>
+                    <input type="number" id="weight" step="1" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2 border" placeholder="例如: 4500">
                 </div>
 
-                <!-- 體重 -->
-                <div>
-                    <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">體重 (kg) <span class="text-red-500">*</span></label>
-                    <input type="number" id="weight" step="0.01" min="0" required placeholder="例如：4.52">
-                </div>
-
-                <!-- 精神狀況 -->
-                <div>
-                    <label for="spirit" class="block text-sm font-medium text-gray-700 mb-1">精神狀況 (FIP關鍵指標)</label>
-                    <select id="spirit" required>
-                        <option value="極好">極好 (活躍玩耍)</option>
-                        <option value="良好">良好 (正常互動)</option>
-                        <option value="一般">一般 (安靜休息為主)</option>
-                        <option value="差">差 (不愛動，躲藏)</option>
-                        <option value="極差">極差 (無反應/虛弱)</option>
+                <!-- 核心項目：精神狀況 -->
+                <div class="col-span-1">
+                    <label for="mentalStatus" class="block text-sm font-medium text-gray-700">精神狀況 (Vet. 必備)</label>
+                    <select id="mentalStatus" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2 border">
+                        <option value="Normal">正常活躍</option>
+                        <option value="Slightly Low">略為低迷</option>
+                        <option value="Lethargic">明顯嗜睡/低迷 (Lethargy)</option>
                     </select>
                 </div>
 
-                <!-- 行動 -->
-                <div>
-                    <label for="movement" class="block text-sm font-medium text-gray-700 mb-1">行動力/活躍度</label>
-                    <select id="movement" required>
-                        <option value="活躍">活躍 (跑跳)</option>
-                        <option value="正常">正常 (緩慢走動)</option>
-                        <option value="遲緩">遲緩 (移動緩慢)</option>
-                        <option value="不動">幾乎不動</option>
-                    </select>
+                <!-- 核心項目：體溫 -->
+                <div class="col-span-1">
+                    <label for="temperature" class="block text-sm font-medium text-gray-700">體溫 (℃) / 發燒與否</label>
+                    <input type="number" id="temperature" step="0.1" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 p-2 border" placeholder="例如: 38.5">
                 </div>
 
-                <!-- 發燒與否 (主指標) -->
-                <div class="flex items-center space-x-4">
-                    <label for="hasFever" class="block text-sm font-medium text-gray-700 mb-1">發燒狀態 (體溫 > 39.2°C)</label>
-                    <input type="checkbox" id="hasFever" class="h-5 w-5 text-red-600 border-gray-300 rounded focus:ring-red-500">
-                    <span id="fever-status" class="text-sm font-semibold">否 (No)</span>
-                </div>
-                
-                <!-- 藥物 ml & 時間 -->
-                <div>
-                    <label for="medicationMl" class="block text-sm font-medium text-gray-700 mb-1">主藥物劑量 (ml) <span class="text-gray-400">(如GS-441524)</span></label>
-                    <input type="number" id="medicationMl" step="0.01" min="0" placeholder="例如：2.0">
-                </div>
-                <div>
-                    <label for="medicationTime" class="block text-sm font-medium text-gray-700 mb-1">主藥物時間</label>
-                    <input type="time" id="medicationTime">
-                </div>
-
-                <!-- 新增：貧血藥 -->
-                <div class="flex items-center space-x-4">
-                    <label for="medAnemia" class="block text-sm font-medium text-gray-700 mb-1">貧血藥 (Anemia Med)</label>
-                    <input type="checkbox" id="medAnemia" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                <!-- 飲食記錄 -->
+                <div class="col-span-3 border-t pt-4 mt-2">
+                    <h3 class="text-base font-semibold text-gray-600 mb-2">飲食記錄 (克, g / 毫升, ml)</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label for="wetFood" class="block text-sm font-medium text-gray-700">濕糧份量 (g)</label>
+                            <input type="number" id="wetFood" step="1" value="0" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label for="dryFood" class="block text-sm font-medium text-gray-700">乾糧份量 (g)</label>
+                            <input type="number" id="dryFood" step="1" value="0" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label for="emergencyFood" class="block text-sm font-medium text-gray-700">急救/強制餵食量 (ml/g)</label>
+                            <input type="number" id="emergencyFood" step="1" value="0" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 新增：免疫力藥 -->
-                <div class="flex items-center space-x-4">
-                    <label for="medImmunity" class="block text-sm font-medium text-gray-700 mb-1">免疫力藥 (Immunity Booster)</label>
-                    <input type="checkbox" id="medImmunity" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                </div>
-                
-                <!-- 新增：開胃藥 (位置) -->
-                <div>
-                    <label for="medAppetite" class="block text-sm font-medium text-gray-700 mb-1">開胃藥 (塗抹位置)</label>
-                    <select id="medAppetite" required>
-                        <option value="無">無 (Not Given)</option>
-                        <option value="左耳">左耳 (Left Ear)</option>
-                        <option value="右耳">右耳 (Right Ear)</option>
-                    </select>
+                <!-- 藥物/治療記錄 -->
+                <div class="col-span-3 border-t pt-4 mt-2">
+                    <h3 class="text-base font-semibold text-gray-600 mb-2">藥物及重點症狀記錄</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- FIP 主藥 -->
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="fipMedDose" class="block text-sm font-medium text-gray-700">FIP 主藥 (ML) / 時間</label>
+                            <input type="text" id="fipMedDose" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" placeholder="例如: 0.8ml @ 20:00">
+                        </div>
+                        <!-- 開胃藥 -->
+                        <div>
+                            <label for="appetiteStimulant" class="block text-sm font-medium text-gray-700">開胃藥 (Mirtazapine/cypro)</label>
+                            <select id="appetiteStimulant" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                                <option value="None">無</option>
+                                <option value="L">左耳 (外用)</option>
+                                <option value="R">右耳 (外用)</option>
+                                <option value="Oral">口服</option>
+                            </select>
+                        </div>
+                        <!-- 貧血藥 -->
+                        <div>
+                            <label for="anemiaMed" class="block text-sm font-medium text-gray-700">貧血藥 (Yes/No)</label>
+                            <select id="anemiaMed" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                                <option value="No">否</option>
+                                <option value="Yes">是</option>
+                            </select>
+                        </div>
+                        <!-- 免疫力藥 -->
+                        <div>
+                            <label for="immunityMed" class="block text-sm font-medium text-gray-700">免疫力藥 (Yes/No)</label>
+                            <select id="immunityMed" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                                <option value="No">否</option>
+                                <option value="Yes">是</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 其他備註 -->
-                <div class="md:col-span-2">
-                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">其他必須的項目與備註</label>
-                    <textarea id="notes" rows="3" placeholder="例如：今日飲水份量，排泄狀況，腹圍測量..."></textarea>
+                <!-- 獸醫認為必須的項目 (乾性FIP特別關注) -->
+                <div class="col-span-3 border-t pt-4 mt-2">
+                    <h3 class="text-base font-semibold text-gray-600 mb-2">FIP 乾性症狀細節追蹤 (Vet. 特別提醒)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- 行動/活動力 -->
+                        <div>
+                            <label for="mobility" class="block text-sm font-medium text-gray-700">行動/活動力</label>
+                            <select id="mobility" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                                <option value="Normal">正常活動</option>
+                                <option value="Reduced">活動減少</option>
+                                <option value="Ataxia">步態不穩/共濟失調 (Neurological)</option>
+                            </select>
+                        </div>
+                        <!-- 抽搐/神經症狀 -->
+                        <div>
+                            <label for="seizures" class="block text-sm font-medium text-gray-700">抽搐/神經症狀</label>
+                            <input type="text" id="seizures" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" placeholder="無 / 輕微震顫 / 持續時間">
+                        </div>
+                        <!-- 黃疸/眼睛症狀 -->
+                        <div>
+                            <label for="jaundice" class="block text-sm font-medium text-gray-700">黃疸 (Icterus) / 眼睛症狀</label>
+                            <input type="text" id="jaundice" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" placeholder="無 / 輕微黃 / 眼睛混濁/葡萄膜炎">
+                        </div>
+                        <!-- 脫水情況 -->
+                        <div>
+                            <label for="hydration" class="block text-sm font-medium text-gray-700">脫水情況 (皮膚張力)</label>
+                            <select id="hydration" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                                <option value="Normal">正常 (皮膚回彈快)</option>
+                                <option value="Mild">輕微 (回彈慢)</option>
+                                <option value="Severe">嚴重 (明顯脫水)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Submit Button -->
-                <div class="md:col-span-2">
-                    <button type="submit" id="saveButton" class="w-full py-3 px-4 bg-green-600 text-white font-bold rounded-lg transition duration-150 shadow-md hover:bg-green-700">
-                        💾 儲存今日紀錄 (本機)
+                <!-- 備註 -->
+                <div class="col-span-3">
+                    <label for="notes" class="block text-sm font-medium text-gray-700">其他備註 / 排泄狀況</label>
+                    <textarea id="notes" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" placeholder="例如: 今天食慾明顯提升, 尿量正常, 大便偏軟。"></textarea>
+                </div>
+
+                <!-- 提交按鈕 -->
+                <div class="col-span-3">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent bg-emerald-600 py-3 text-lg font-medium text-white shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                        💾 儲存今日健康記錄
                     </button>
-                    <div id="saveMessage" class="mt-3 text-center text-sm font-medium text-green-600 hidden">紀錄已成功儲存！</div>
+                    <div id="message-box" class="mt-2 text-center text-sm font-medium hidden p-2 rounded-lg"></div>
                 </div>
             </form>
-        </div>
+        </section>
 
-        <!-- 2. SUMMARY/HISTORY VIEW (Updated to include new fields) -->
-        <div id="summary-view" class="hidden">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">歷史數據總結 (本機儲存)</h2>
-            <div class="overflow-x-auto custom-scroll max-h-[60vh]">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50 sticky top-0 z-10">
+        <!-- 記錄總結表格 -->
+        <section class="card bg-white p-6 rounded-xl">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">歷史記錄總結</h2>
+            <!-- 表格容器，用於響應式滾動 -->
+            <div class="overflow-x-auto">
+                <table id="summary-table" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">體重 (kg)</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">變化</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">飲食/精神</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">發燒/主藥劑量</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">其他藥物</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">備註</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">日期</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">體重 (g)</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">變化</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">體溫 (℃)</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">精神</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">FIP藥 (ML/Time)</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">開胃藥</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">神經/抽搐</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">飲食總量(g/ml)</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="summaryTableBody" class="bg-white divide-y divide-gray-200">
-                        <!-- Data will be injected here -->
+                    <tbody id="summary-body" class="bg-white divide-y divide-gray-200">
+                        <!-- 記錄將由 JavaScript 渲染 -->
+                    </tbody>
+                </table>
+                <p id="no-records-message" class="text-center text-gray-500 p-4 hidden">暫無記錄，請先輸入數據。</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- 血檢報告記錄頁籤內容 -->
+    <div id="blood-report" class="tab-content hidden">
+        <section class="card bg-white p-6 rounded-xl">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">FIP 關鍵血檢指標追蹤 (請輸入最新報告數據)</h2>
+            <p class="text-sm text-gray-500 mb-4">根據獸醫經驗，乾性FIP治療期請特別關注以下指標：</p>
+            <form id="blood-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div class="col-span-1">
+                    <label for="reportDate" class="block text-sm font-medium text-gray-700">報告日期 <span class="text-xs text-red-500">*</span></label>
+                    <input type="date" id="reportDate" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                </div>
+                <div class="col-span-1">
+                    <label for="totalProtein" class="block text-sm font-medium text-gray-700">總蛋白 (Total Protein, TP) (g/dL)</label>
+                    <input type="number" id="totalProtein" step="0.1" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                </div>
+                <div class="col-span-1">
+                    <label for="albumin" class="block text-sm font-medium text-gray-700">白蛋白 (Albumin, ALB) (g/dL)</label>
+                    <input type="number" id="albumin" step="0.1" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                </div>
+                <div class="col-span-1">
+                    <label for="globulin" class="block text-sm font-medium text-gray-700">球蛋白 (Globulin, GLOB) (g/dL)</label>
+                    <input type="number" id="globulin" step="0.1" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-sm font-medium text-gray-700">白蛋白/球蛋白比值 (A:G Ratio)</label>
+                    <p id="agRatioDisplay" class="mt-1 p-2 text-lg font-bold text-gray-600 border border-gray-200 rounded-lg bg-gray-50">--</p>
+                    <input type="hidden" id="agRatio" value="">
+                </div>
+                <div class="col-span-1">
+                    <label for="hct" class="block text-sm font-medium text-gray-700">血容比 (Hematocrit, HCT) (%) <span class="text-xs text-red-500">(貧血指標)</span></label>
+                    <input type="number" id="hct" step="0.1" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border">
+                </div>
+
+                <div class="col-span-2">
+                    <label for="bloodNotes" class="block text-sm font-medium text-gray-700">血檢備註</label>
+                    <textarea id="bloodNotes" rows="2" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-2 border" placeholder="其他重要指標如：黃疸指數、肝腎功能是否異常。"></textarea>
+                </div>
+                
+                <div class="col-span-2">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent bg-blue-600 py-3 text-lg font-medium text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                        💾 儲存血檢報告記錄
+                    </button>
+                    <div id="blood-message-box" class="mt-2 text-center text-sm font-medium hidden p-2 rounded-lg"></div>
+                </div>
+            </form>
+
+            <h3 class="text-lg font-semibold text-gray-700 mt-8 mb-4 border-b pb-2">歷史血檢報告</h3>
+            <div class="overflow-x-auto">
+                <table id="blood-summary-table" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">報告日期</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TP</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ALB</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GLOB</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">A:G Ratio</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HCT (%)</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">備註</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blood-summary-body" class="bg-white divide-y divide-gray-200">
+                        <!-- 記錄將由 JavaScript 渲染 -->
                     </tbody>
                 </table>
             </div>
-             <p class="text-sm text-gray-500 mt-4">
-                <span class="text-green-600 font-bold">▲</span> 體重增加 | 
-                <span class="text-red-600 font-bold">▼</span> 體重減少 | 
-                <span class="text-gray-500 font-bold">=</span> 無變化
-            </p>
-        </div>
-
-        <!-- 3. REPORT/IMAGE STORAGE VIEW -->
-        <div id="report-view" class="hidden p-4 border rounded-lg shadow-inner bg-blue-50">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">🖼️ 報告圖片/檔案管理 (僅本機)</h2>
-            <p class="text-sm text-gray-600 mb-4">
-                您可以選擇報告圖片（例如：驗血報告、超音波圖等）或任何檔案。
-                <span class="font-bold text-red-600">重要提醒：由於採用瀏覽器本機儲存，此功能無法真正將檔案永久儲存或上傳。它僅用於暫時查看檔案資訊。</span>
-            </p>
-
-            <input type="file" id="reportFile" class="w-full mb-4 p-2 border rounded-lg bg-white">
-            
-            <div id="fileInfo" class="mt-6 p-4 bg-white border border-blue-200 rounded-lg shadow-inner min-h-20">
-                <p class="text-gray-500 text-center">檔案資訊將顯示在此處。</p>
-            </div>
-        </div>
-        
+        </section>
     </div>
 
-    <!-- Custom Alert Modal (for non-confirmation messages) -->
-    <div id="temp-alert-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 hidden">
-        <div class="bg-white rounded-lg shadow-2xl p-6 w-80 m-4">
-            <h3 class="text-lg font-bold mb-4 text-gray-800">提示</h3>
-            <p id="alert-message" class="text-gray-600 mb-6"></p>
-            <div class="flex justify-end">
-                <button id="modal-ok" class="py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">確定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Custom Confirm Modal (for deletion) -->
-    <div id="temp-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300 hidden">
-        <div class="bg-white rounded-lg shadow-2xl p-6 w-80 m-4">
-            <h3 class="text-lg font-bold mb-4 text-gray-800">操作確認</h3>
-            <p id="modal-message" class="text-gray-600 mb-6"></p>
-            <div class="flex justify-end space-x-3">
-                <button id="modal-cancel" class="py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">取消</button>
-                <button id="modal-confirm" class="py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">確定</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Local Storage Scripts -->
+    <!-- JavaScript 邏輯 -->
     <script>
-        
-        // Global State & Constants
-        const CONSTANTS = {
-            LOCAL_STORAGE_KEY: 'shirley_fip_records_local', // 儲存在 localStorage 的 key
-        };
-        
-        const DOM = {
-            recordForm: document.getElementById('record-form'),
-            summaryTableBody: document.getElementById('summaryTableBody'),
-            saveButton: document.getElementById('saveButton'),
-            saveMessage: document.getElementById('saveMessage'),
-            authStatus: document.getElementById('auth-status'),
-            reportFile: document.getElementById('reportFile'), // Kept for image storage feature
-            fileInfo: document.getElementById('fileInfo'), // New DOM element for file info
-            feverStatus: document.getElementById('fever-status'),
-            hasFever: document.getElementById('hasFever'),
-        };
+        // 設定今天的日期為預設值
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('recordDate').value = today;
+        document.getElementById('today-date').textContent = today;
 
-        let localRecords = []; // 儲存在記憶體中的每日紀錄
-
-        // --- Utility Functions for Modals ---
+        // 貓咪生日和確診日
+        const CAT_DOB = new Date('2025-01-31');
+        const DIAGNOSIS_DATE = new Date('2025-12-02');
 
         /**
-         * Custom alert for non-blocking messages (replaces window.alert)
-         * @param {string} message - Message to display
+         * 顯示訊息
+         * @param {string} message - 訊息內容
+         * @param {string} type - 類型 ('success' or 'error')
+         * @param {string} boxId - 訊息框ID
          */
-        function customAlert(message) {
-             const modal = document.getElementById('temp-alert-modal');
-             if (!modal) return;
-             
-             document.getElementById('alert-message').textContent = message;
-             modal.classList.remove('hidden');
-             
-             document.getElementById('modal-ok').onclick = () => {
-                 modal.classList.add('hidden');
-             };
+        function showMessage(message, type, boxId = 'message-box') {
+            const box = document.getElementById(boxId);
+            box.textContent = message;
+            box.className = `mt-2 text-center text-sm font-medium p-2 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            box.classList.remove('hidden');
+            setTimeout(() => {
+                box.classList.add('hidden');
+            }, 3000);
         }
 
-        /**
-         * Custom confirm function for deletion (replaces window.confirm)
-         * @param {string} message - Message to display
-         * @returns {Promise<boolean>}
-         */
-         function customConfirmDelete(message) {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('temp-confirm-modal');
-                if (!modal) return resolve(false);
+        // --- 頁籤切換邏輯 ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
 
-                document.getElementById('modal-message').textContent = message;
-                modal.classList.remove('hidden');
-                
-                document.getElementById('modal-cancel').onclick = () => {
-                    modal.classList.add('hidden');
-                    resolve(false);
-                };
-                
-                document.getElementById('modal-confirm').onclick = () => {
-                    modal.classList.add('hidden');
-                    resolve(true);
-                };
-            });
+            document.getElementById(`${tabName}-tracker`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // 確保切換後重繪表格
+            if (tabName === 'daily') {
+                renderDailyRecords();
+            } else if (tabName === 'blood') {
+                renderBloodReports();
+            }
         }
 
+        // --- 貓咪年齡計算 ---
+        function calculateAgeAndDay() {
+            const today = new Date();
+            const ageMs = today - CAT_DOB;
+            const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+            const ageMonths = Math.floor(ageDays / 30.44); // Approximate month
+            
+            let ageText = '';
+            if (ageMonths > 1) {
+                ageText = `${ageMonths} 個月`;
+            } else {
+                ageText = `${ageDays} 天`;
+            }
 
-        // --- Local Storage Functions ---
+            const diagnosisMs = today - DIAGNOSIS_DATE;
+            const diagnosisDays = Math.floor(diagnosisMs / (1000 * 60 * 60 * 24)) + 1; // +1 for Day 1 is 2025-12-02
+
+            document.getElementById('cat-age').textContent = `${ageText} (FIP治療第 ${diagnosisDays} 天)`;
+        }
+
+        // --- 每日健康追蹤邏輯 ---
 
         /**
-         * 從 localStorage 載入紀錄到 memory
+         * 從 localStorage 載入每日數據
+         * @returns {Object} 每日記錄對象
          */
-        function loadRecords() {
+        function loadDailyRecords() {
             try {
-                const json = localStorage.getItem(CONSTANTS.LOCAL_STORAGE_KEY);
-                localRecords = json ? JSON.parse(json) : [];
-                // 確保數據是依照日期降冪排序 (新到舊)
-                localRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-                renderRecords(localRecords);
+                const data = localStorage.getItem('shirleyFIPRecords');
+                return data ? JSON.parse(data) : {};
             } catch (e) {
-                console.error("Error loading records from localStorage:", e);
-                customAlert('載入舊紀錄失敗，可能是儲存資料損壞。將重新開始紀錄。');
-                localRecords = [];
-                renderRecords([]);
+                console.error("無法載入每日記錄:", e);
+                return {};
             }
         }
 
         /**
-         * 將記憶體中的紀錄存回 localStorage
+         * 儲存每日數據到 localStorage
+         * @param {Object} data - 要儲存的每日記錄對象
          */
-        function saveLocalRecords() {
+        function saveDailyRecords(data) {
             try {
-                localStorage.setItem(CONSTANTS.LOCAL_STORAGE_KEY, JSON.stringify(localRecords));
+                localStorage.setItem('shirleyFIPRecords', JSON.stringify(data));
             } catch (e) {
-                console.error("Error saving records to localStorage:", e);
-                customAlert('儲存紀錄失敗，可能是您的瀏覽器空間不足。');
+                console.error("無法儲存每日記錄:", e);
             }
         }
 
-        /**
-         * 儲存每日紀錄到 localStorage
-         */
-        function saveRecord(event) {
-            event.preventDefault();
-            
-            const recordDate = document.getElementById('recordDate').value;
-            const weightInput = document.getElementById('weight');
-            const weight = parseFloat(weightInput.value);
-            
-            // 處理飲食份量，如果不是數字就當作 0
-            const dietQuantity = parseFloat(document.getElementById('dietQuantity').value) || 0;
-            
-            if (!recordDate || isNaN(weight) || weight <= 0) {
-                customAlert('請輸入有效的日期和體重（必須大於 0 kg）。');
-                weightInput.focus();
+        document.getElementById('daily-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const date = document.getElementById('recordDate').value;
+            const weight = parseFloat(document.getElementById('weight').value);
+
+            if (!date || isNaN(weight)) {
+                showMessage('請輸入日期和體重 (克)', 'error');
                 return;
             }
 
             const newRecord = {
-                // 使用 date 作為紀錄的唯一識別符
-                id: recordDate, 
-                date: recordDate, 
-                diet: document.getElementById('diet').value,
-                dietQuantity: dietQuantity, // 儲存飲食份量
                 weight: weight,
-                spirit: document.getElementById('spirit').value,
-                movement: document.getElementById('movement').value,
-                hasFever: DOM.hasFever.checked,
-                
-                // 藥物追蹤項目
-                medAnemia: document.getElementById('medAnemia').checked,
-                medImmunity: document.getElementById('medImmunity').checked,
-                medAppetite: document.getElementById('medAppetite').value, // 儲存 '無', '左耳', or '右耳'
-
-                medicationMl: parseFloat(document.getElementById('medicationMl').value) || 0,
-                medicationTime: document.getElementById('medicationTime').value || '',
-                notes: document.getElementById('notes').value.trim() || '無',
-                lastUpdated: new Date().toISOString()
+                temperature: parseFloat(document.getElementById('temperature').value) || null,
+                mentalStatus: document.getElementById('mentalStatus').value,
+                wetFood: parseFloat(document.getElementById('wetFood').value) || 0,
+                dryFood: parseFloat(document.getElementById('dryFood').value) || 0,
+                emergencyFood: parseFloat(document.getElementById('emergencyFood').value) || 0,
+                fipMedDose: document.getElementById('fipMedDose').value,
+                appetiteStimulant: document.getElementById('appetiteStimulant').value,
+                anemiaMed: document.getElementById('anemiaMed').value,
+                immunityMed: document.getElementById('immunityMed').value,
+                mobility: document.getElementById('mobility').value,
+                seizures: document.getElementById('seizures').value,
+                jaundice: document.getElementById('jaundice').value,
+                hydration: document.getElementById('hydration').value,
+                notes: document.getElementById('notes').value,
+                timestamp: new Date().toISOString()
             };
 
-            // 檢查是否為更新現有紀錄
-            const existingIndex = localRecords.findIndex(r => r.date === recordDate);
-
-            if (existingIndex !== -1) {
-                // 更新現有紀錄
-                localRecords[existingIndex] = newRecord;
-                console.log(`Updated record for ${recordDate}`);
-            } else {
-                // 新增紀錄
-                localRecords.push(newRecord);
-                console.log(`Added new record for ${recordDate}`);
-            }
-
-            // 重新排序並儲存
-            localRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-            saveLocalRecords();
-            renderRecords(localRecords);
+            const allRecords = loadDailyRecords();
+            allRecords[date] = newRecord;
+            saveDailyRecords(allRecords);
+            showMessage('✅ 每日記錄儲存成功！', 'success');
             
-            DOM.saveMessage.classList.remove('hidden');
-            
-            // 清空部分輸入欄位，方便輸入下一次紀錄
-            document.getElementById('weight').value = '';
-            document.getElementById('medicationMl').value = '';
-            document.getElementById('dietQuantity').value = ''; // 清空份量
-            document.getElementById('notes').value = '';
-
-            setTimeout(() => DOM.saveMessage.classList.add('hidden'), 3000);
-        }
+            // 重繪總結表格
+            renderDailyRecords();
+        });
 
         /**
-         * 刪除特定日期的紀錄
-         * @param {string} date - 紀錄的日期 (作為Document ID)
+         * 渲染每日記錄總結表格
          */
-        async function deleteRecord(date) {
+        function renderDailyRecords() {
+            const allRecords = loadDailyRecords();
+            const dates = Object.keys(allRecords).sort().reverse(); // 由近到遠排序
+            const body = document.getElementById('summary-body');
+            body.innerHTML = '';
             
-            const confirmDelete = await customConfirmDelete(`確定要刪除 ${date} 的紀錄嗎？`);
-            if (!confirmDelete) return;
-
-            // 過濾掉要刪除的紀錄
-            localRecords = localRecords.filter(r => r.date !== date);
-            
-            saveLocalRecords();
-            renderRecords(localRecords);
-            console.log(`Deleted record for ${date}`);
-        }
-
-        // --- UI Rendering ---
-        
-        /**
-         * 渲染歷史紀錄表格
-         * @param {Array<Object>} records - 已排序 (新到舊) 的每日紀錄
-         */
-        function renderRecords(records) {
-            if (records.length === 0) {
-                DOM.summaryTableBody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500">尚無紀錄。請前往「每日紀錄」輸入數據。</td></tr>';
+            if (dates.length === 0) {
+                document.getElementById('no-records-message').classList.remove('hidden');
                 return;
             }
+            document.getElementById('no-records-message').classList.add('hidden');
 
-            let html = '';
-            // 由於 records 已是新到舊排序，我們需要反向迭代來計算「前一天」的數值，然後再以新到舊的順序渲染
-            const sortedByOldest = [...records].reverse();
-            const newestRecordsWithChange = []; 
 
-            for (let i = 0; i < sortedByOldest.length; i++) {
-                const current = sortedByOldest[i];
+            let previousWeight = null;
+
+            // 由於表格是從近到遠，但體重變化需要從遠到近計算，所以我們需要倒著處理數據
+            const reversedDates = Object.keys(allRecords).sort(); 
+            const recordsWithChange = {};
+
+            reversedDates.forEach((date, index) => {
+                const record = allRecords[date];
                 let weightChange = 0;
-                let changeColor = 'text-gray-500';
-                let changeIcon = '=';
+                let colorClass = 'text-gray-500';
 
-                // 找到前一天的有效體重 (前一個元素)
-                if (i > 0) {
-                    const previous = sortedByOldest[i - 1];
-                    // 計算體重變化
-                    weightChange = current.weight - previous.weight;
-                    
-                    if (weightChange > 0.01) { 
-                        changeColor = 'text-green-600 font-bold';
-                        changeIcon = '▲';
-                    } else if (weightChange < -0.01) { 
-                        changeColor = 'text-red-600 font-bold';
-                        changeIcon = '▼';
+                if (index > 0) {
+                    const prevDate = reversedDates[index - 1];
+                    const prevWeight = allRecords[prevDate].weight;
+                    weightChange = record.weight - prevWeight;
+
+                    if (weightChange > 0) {
+                        colorClass = 'text-green-600 font-bold';
+                    } else if (weightChange < 0) {
+                        colorClass = 'text-red-600 font-bold';
                     }
                 }
                 
-                // 將計算結果儲存起來
-                const recordWithChange = {
-                    ...current,
-                    weightChange: weightChange.toFixed(2),
-                    changeColor: changeColor,
-                    changeIcon: changeIcon
+                recordsWithChange[date] = {
+                    ...record,
+                    weightChange: weightChange,
+                    colorClass: colorClass
                 };
-                newestRecordsWithChange.unshift(recordWithChange); // 放回新到舊的順序
-            }
-            
-            // 渲染表格
-            html = newestRecordsWithChange.map(record => {
-                // 格式化飲食狀況 (包含份量)
-                const dietDisplay = `${record.diet}` + 
-                                    (record.dietQuantity > 0 ? `<br><span class="text-xs text-gray-400">(${record.dietQuantity} 量)</span>` : '');
-
-                return `
-                <tr class="${record.hasFever ? 'bg-red-50/70 hover:bg-red-100/70' : 'hover:bg-gray-50'} transition duration-100">
-                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${record.date}</td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm">${record.weight.toFixed(2)} kg</td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm ${record.changeColor}">
-                        ${record.changeIcon} ${record.changeIcon !== '=' ? Math.abs(parseFloat(record.weightChange)).toFixed(2) : '0.00'}
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600">
-                        ${dietDisplay} / ${record.spirit}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                        ${record.hasFever ? '<span class="text-red-500 font-bold">發燒 Yes</span>' : '無發燒 No'}<br>
-                        ${record.medicationMl > 0 ? `${record.medicationMl.toFixed(2)} ml @ ${record.medicationTime}` : '無主藥'}
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600">
-                        ${record.medAnemia ? '貧血藥 <span class="text-indigo-600">✔️</span><br>' : ''}
-                        ${record.medImmunity ? '免疫力藥 <span class="text-indigo-600">✔️</span><br>' : ''}
-                        ${record.medAppetite !== '無' ? `開胃藥 (${record.medAppetite})` : '無開胃藥'}
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600 notes-cell">${record.notes}</td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm">
-                        <button onclick="deleteRecord('${record.date}')" class="text-red-500 hover:text-red-700 font-medium text-xs rounded-full p-1 transition duration-150">
-                            🗑️ 刪除
-                        </button>
-                    </td>
-                </tr>
-            `}).join('');
-
-            DOM.summaryTableBody.innerHTML = html;
-        }
-
-        /**
-         * 顯示指定的視圖並更新Tab樣式
-         * @param {string} viewId - 要顯示的視圖ID ('tracker', 'summary', 'report')
-         */
-        window.showView = function(viewId) {
-            ['tracker', 'summary', 'report'].forEach(id => { 
-                const view = document.getElementById(`${id}-view`);
-                const tab = document.getElementById(`tab-${id}`);
-                if (view) view.classList.add('hidden');
-                if (tab) {
-                    tab.classList.remove('border-green-500', 'text-green-600');
-                    tab.classList.add('text-gray-500', 'hover:text-green-600', 'hover:border-green-500');
-                }
             });
 
-            const activeView = document.getElementById(`${viewId}-view`);
-            const activeTab = document.getElementById(`tab-${viewId}`);
-            
-            if (activeView) activeView.classList.remove('hidden');
-            if (activeTab) {
-                activeTab.classList.add('border-green-500', 'text-green-600');
-                activeTab.classList.remove('text-gray-500', 'hover:text-green-600', 'hover:border-green-500');
-            }
+            // 現在我們從近到遠渲染表格
+            const finalDates = Object.keys(recordsWithChange).sort().reverse();
 
-            // 確保切換到 summary 時數據是最新的
-            if (viewId === 'summary') {
-                loadRecords();
+            finalDates.forEach(date => {
+                const record = recordsWithChange[date];
+                const totalFood = record.wetFood + record.dryFood + record.emergencyFood;
+                const changeSymbol = record.weightChange > 0 ? '▲' : (record.weightChange < 0 ? '▼' : '▬');
+                const tempDisplay = record.temperature ? `${record.temperature}℃` : '無';
+
+                // 體重變化單元格內容
+                const weightChangeCell = `
+                    <span class="${record.colorClass}">
+                        ${record.weightChange !== 0 ? changeSymbol : ''} ${record.weightChange.toFixed(0)} g
+                    </span>
+                `;
+                
+                // 精神狀況顏色標示
+                let mentalColor = 'text-gray-600';
+                if (record.mentalStatus === 'Lethargic') mentalColor = 'text-red-600 font-bold';
+                if (record.mentalStatus === 'Normal') mentalColor = 'text-green-600';
+
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-100 transition duration-100';
+                row.innerHTML = `
+                    <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white">${date}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${record.weight} g</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm">${record.weightChange !== 0 ? weightChangeCell : '--'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${tempDisplay}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm ${mentalColor}">${record.mentalStatus}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${record.fipMedDose || '無'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${record.appetiteStimulant !== 'None' ? record.appetiteStimulant : '無'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${record.seizures || '無'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${totalFood}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="deleteDailyRecord('${date}')" class="text-red-500 hover:text-red-700 text-xs">刪除</button>
+                    </td>
+                `;
+                body.appendChild(row);
+
+                previousWeight = record.weight;
+            });
+        }
+
+        /**
+         * 刪除單日記錄
+         * @param {string} date - 要刪除的日期
+         */
+        function deleteDailyRecord(date) {
+            if (confirm(`確定要刪除 ${date} 的記錄嗎？`)) {
+                const allRecords = loadDailyRecords();
+                delete allRecords[date];
+                saveDailyRecords(allRecords);
+                renderDailyRecords();
+                showMessage('記錄已刪除。', 'success');
+            }
+        }
+
+
+        // --- 血檢報告邏輯 ---
+
+        /**
+         * 從 localStorage 載入血檢數據
+         * @returns {Object} 血檢記錄對象 (以日期為 key)
+         */
+        function loadBloodReports() {
+            try {
+                const data = localStorage.getItem('shirleyBloodReports');
+                return data ? JSON.parse(data) : {};
+            } catch (e) {
+                console.error("無法載入血檢報告:", e);
+                return {};
             }
         }
 
         /**
-         * 監聽發燒勾選框變化，更新文字
+         * 儲存血檢數據到 localStorage
+         * @param {Object} data - 要儲存的血檢記錄對象
          */
-        DOM.hasFever.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                DOM.feverStatus.textContent = '是 (Yes)';
-                DOM.feverStatus.classList.remove('text-sm', 'font-semibold');
-                DOM.feverStatus.classList.add('text-red-500', 'font-bold');
+        function saveBloodReports(data) {
+            try {
+                localStorage.setItem('shirleyBloodReports', JSON.stringify(data));
+            } catch (e) {
+                console.error("無法儲存血檢報告:", e);
+            }
+        }
+
+        // A:G Ratio 自動計算
+        document.getElementById('albumin').addEventListener('input', updateAGRatio);
+        document.getElementById('globulin').addEventListener('input', updateAGRatio);
+
+        function updateAGRatio() {
+            const alb = parseFloat(document.getElementById('albumin').value);
+            const glob = parseFloat(document.getElementById('globulin').value);
+            const ratioDisplay = document.getElementById('agRatioDisplay');
+            const ratioInput = document.getElementById('agRatio');
+
+            if (alb > 0 && glob > 0) {
+                const ratio = (alb / glob).toFixed(2);
+                ratioDisplay.textContent = ratio;
+                ratioInput.value = ratio;
+                if (ratio < 0.6) {
+                    ratioDisplay.classList.remove('text-green-600');
+                    ratioDisplay.classList.add('text-red-600');
+                } else {
+                    ratioDisplay.classList.remove('text-red-600');
+                    ratioDisplay.classList.add('text-green-600');
+                }
             } else {
-                DOM.feverStatus.textContent = '否 (No)';
-                DOM.feverStatus.classList.add('text-sm', 'font-semibold');
-                DOM.feverStatus.classList.remove('text-red-500', 'font-bold');
+                ratioDisplay.textContent = '--';
+                ratioInput.value = '';
+                ratioDisplay.classList.remove('text-red-600', 'text-green-600');
             }
+        }
+
+        document.getElementById('blood-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const date = document.getElementById('reportDate').value;
+            if (!date) {
+                showMessage('請輸入報告日期', 'error', 'blood-message-box');
+                return;
+            }
+            
+            // 確保 A:G Ratio 已計算
+            updateAGRatio();
+
+            const newReport = {
+                reportDate: date,
+                totalProtein: parseFloat(document.getElementById('totalProtein').value) || null,
+                albumin: parseFloat(document.getElementById('albumin').value) || null,
+                globulin: parseFloat(document.getElementById('globulin').value) || null,
+                agRatio: parseFloat(document.getElementById('agRatio').value) || null,
+                hct: parseFloat(document.getElementById('hct').value) || null,
+                bloodNotes: document.getElementById('bloodNotes').value,
+                timestamp: new Date().toISOString()
+            };
+
+            const allReports = loadBloodReports();
+            allReports[date] = newReport; // 使用日期作為唯一 key
+            saveBloodReports(allReports);
+            showMessage('✅ 血檢報告儲存成功！', 'success', 'blood-message-box');
+            
+            // 重繪血檢表格
+            renderBloodReports();
         });
-        
-        // --- Report/Image File Info Handler ---
+
+        /**
+         * 渲染血檢報告總結表格
+         */
+        function renderBloodReports() {
+            const allReports = loadBloodReports();
+            const dates = Object.keys(allReports).sort().reverse(); // 由近到遠排序
+            const body = document.getElementById('blood-summary-body');
+            body.innerHTML = '';
+            
+            dates.forEach(date => {
+                const report = allReports[date];
+
+                // A:G Ratio 顏色標示: 乾性FIP通常A:G Ratio會很低 (<0.6)，需要特別關注
+                let ratioClass = 'text-gray-700';
+                if (report.agRatio && report.agRatio < 0.6) {
+                    ratioClass = 'text-red-600 font-bold';
+                } else if (report.agRatio && report.agRatio >= 0.8) {
+                    ratioClass = 'text-green-600 font-bold';
+                }
+
+                // HCT 顏色標示: 低於 25% 需要警惕貧血
+                let hctClass = 'text-gray-700';
+                if (report.hct && report.hct < 25) {
+                    hctClass = 'text-red-600 font-bold';
+                } else if (report.hct && report.hct > 30) {
+                     hctClass = 'text-green-600';
+                }
+
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-100 transition duration-100';
+                row.innerHTML = `
+                    <td class="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${report.reportDate}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${report.totalProtein !== null ? report.totalProtein.toFixed(1) : '--'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${report.albumin !== null ? report.albumin.toFixed(1) : '--'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700">${report.globulin !== null ? report.globulin.toFixed(1) : '--'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm ${ratioClass}">${report.agRatio !== null ? report.agRatio.toFixed(2) : '--'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-sm ${hctClass}">${report.hct !== null ? report.hct.toFixed(1) : '--'}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700 max-w-xs truncate">${report.bloodNotes || '無備註'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="deleteBloodReport('${date}')" class="text-red-500 hover:text-red-700 text-xs">刪除</button>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        /**
+         * 刪除血檢報告
+         * @param {string} date - 要刪除的報告日期
+         */
+        function deleteBloodReport(date) {
+            if (confirm(`確定要刪除 ${date} 的血檢報告嗎？`)) {
+                const allReports = loadBloodReports();
+                delete allReports[date];
+                saveBloodReports(allReports);
+                renderBloodReports();
+                showMessage('血檢報告已刪除。', 'success', 'blood-message-box');
+            }
+        }
+
+
+        // --- 啟動初始化 ---
         document.addEventListener('DOMContentLoaded', () => {
-            if (DOM.reportFile) {
-                DOM.reportFile.addEventListener('change', () => {
-                    const file = DOM.reportFile.files[0];
-                    if (file) {
-                        DOM.fileInfo.innerHTML = `
-                            <p class="font-semibold text-gray-800">✅ 已選擇檔案：${file.name}</p>
-                            <p class="text-sm text-gray-600">類型：${file.type}</p>
-                            <p class="text-sm text-gray-600">大小：${(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                            <p class="text-sm text-red-500 font-medium mt-1">注意：此檔案僅顯示資訊，並未永久儲存到網路上或本機儲存空間。</p>
-                        `;
-                    } else {
-                        DOM.fileInfo.innerHTML = `<p class="text-gray-500 text-center">檔案資訊將顯示在此處。</p>`;
-                    }
-                });
-            }
+            calculateAgeAndDay();
+            renderDailyRecords();
+            renderBloodReports();
+            // 初始化 A:G Ratio 顯示
+            updateAGRatio(); 
         });
-        
-        // --- Initialization ---
 
-        window.onload = function () {
-            // 設定今日日期為預設輸入值
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('recordDate').value = today;
-            document.getElementById('current-date').textContent = today.replace(/-/g, '/');
-
-            DOM.recordForm.addEventListener('submit', saveRecord);
-            
-            // 載入 localStorage 數據
-            loadRecords();
-
-            // Set initial view
-            showView('tracker');
-            
-            // Expose functions to the global scope for button click
-            window.deleteRecord = deleteRecord;
-        };
     </script>
 </body>
 </html>
