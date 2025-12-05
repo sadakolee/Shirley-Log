@@ -25,6 +25,10 @@
                         'brand-accent': '#6b5b95', // Muted Purple
                         'state-good': '#55a666', // Green
                         'state-bad': '#d9534f', // Red
+                        'food-wet': '#88b3c8',
+                        'food-dry': '#e6c87f',
+                        'food-treat': '#f4a261',
+                        'food-sos': '#d62828',
                     }
                 }
             }
@@ -40,9 +44,8 @@
         .slide-in { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        /* Checkbox styling */
-        .toggle-checkbox:checked { right: 0; border-color: #55a666; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #55a666; }
+        /* Disabled input styling */
+        input:disabled { background-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
     </style>
 </head>
 <body class="pb-24">
@@ -93,7 +96,7 @@
         <!-- History Title -->
         <div class="flex justify-between items-end mb-4 px-2">
             <h2 class="text-xl font-bold text-gray-700">歷史紀錄</h2>
-            <span class="text-xs text-gray-400">最近 30 筆</span>
+            <span class="text-xs text-gray-400">系統保留最近 90+ 筆資料</span>
         </div>
 
         <!-- Records List -->
@@ -144,30 +147,36 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-1">體溫 (°C)</label>
-                            <input type="number" step="0.1" id="temperature" placeholder="38.x" class="w-full text-center text-lg font-bold bg-white border-0 rounded-xl p-2 shadow-sm focus:ring-2 focus:ring-brand-primary">
-                            <div class="flex items-center mt-1">
-                                <input type="checkbox" id="fever" class="mr-2 h-4 w-4 text-brand-primary rounded">
-                                <label for="fever" class="text-xs text-red-500 font-bold">有發燒感覺</label>
+                            <input type="number" step="0.1" id="temperature" placeholder="38.x" class="w-full text-center text-lg font-bold bg-white border-0 rounded-xl p-2 shadow-sm focus:ring-2 focus:ring-brand-primary transition-colors">
+                            
+                            <!-- No Fever Checkbox -->
+                            <div class="flex items-center mt-2 p-1 bg-white rounded-lg border border-blue-100">
+                                <input type="checkbox" id="temp_normal_feel" onchange="toggleTemperatureInput(this)" class="ml-1 h-4 w-4 text-state-good rounded border-gray-300 focus:ring-state-good">
+                                <label for="temp_normal_feel" class="ml-2 text-xs text-gray-600 font-bold cursor-pointer select-none">摸落無發燒 (Default 38.5)</label>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Food -->
+                <!-- Food (Updated with split fields) -->
                 <div class="space-y-3">
                     <label class="block text-sm font-bold text-gray-700 border-l-4 border-brand-secondary pl-2">飲食攝取</label>
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-4 gap-2">
                         <div>
-                            <label class="text-xs text-gray-500 block text-center mb-1">濕糧 (g)</label>
-                            <input type="number" id="food_wet" class="w-full text-center bg-gray-50 rounded-lg p-2">
+                            <label class="text-xs text-gray-500 block text-center mb-1">濕糧(g)</label>
+                            <input type="number" id="food_wet" class="w-full text-center bg-gray-50 rounded-lg p-2 focus:ring-1 focus:ring-brand-secondary">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500 block text-center mb-1">乾糧 (g)</label>
-                            <input type="number" id="food_dry" class="w-full text-center bg-gray-50 rounded-lg p-2">
+                            <label class="text-xs text-gray-500 block text-center mb-1">乾糧(g)</label>
+                            <input type="number" id="food_dry" class="w-full text-center bg-gray-50 rounded-lg p-2 focus:ring-1 focus:ring-brand-secondary">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500 block text-center mb-1">急救/零食 (g)</label>
-                            <input type="number" id="food_treats" class="w-full text-center bg-gray-50 rounded-lg p-2">
+                            <label class="text-xs text-gray-500 block text-center mb-1">零食(g)</label>
+                            <input type="number" id="food_treats" class="w-full text-center bg-gray-50 rounded-lg p-2 focus:ring-1 focus:ring-brand-secondary">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block text-center mb-1 text-red-400">急救(g)</label>
+                            <input type="number" id="food_sos" class="w-full text-center bg-red-50 text-red-600 font-bold rounded-lg p-2 focus:ring-1 focus:ring-red-300">
                         </div>
                     </div>
                 </div>
@@ -177,13 +186,14 @@
                     <label class="block text-sm font-bold text-gray-700 border-l-4 border-brand-primary pl-2">藥物紀錄</label>
                     
                     <!-- FIP Meds -->
-                    <div class="bg-gray-50 p-3 rounded-xl flex items-center justify-between">
+                    <div class="bg-gray-50 p-3 rounded-xl flex items-center justify-between border border-gray-200">
                         <div>
-                            <p class="font-bold text-sm">FIP 抗病毒藥 (GS/441)</p>
-                            <input type="time" id="meds_fip_time" class="text-xs bg-transparent border-b border-gray-300">
+                            <p class="font-bold text-sm text-brand-primary">FIP 抗病毒針劑 (GS)</p>
+                            <input type="time" id="meds_fip_time" class="text-xs bg-transparent border-b border-gray-300 mt-1">
                         </div>
-                        <div class="flex items-center gap-2">
-                            <input type="number" step="0.1" id="meds_fip_amount" placeholder="ml/mg" class="w-20 p-2 rounded-lg border text-right">
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-[10px] text-gray-400">劑量 (ml)</span>
+                            <input type="number" step="0.1" id="meds_fip_amount" placeholder="0.0" class="w-20 p-2 rounded-lg border-2 border-brand-primary/20 text-right font-bold text-brand-primary focus:border-brand-primary outline-none">
                         </div>
                     </div>
 
@@ -205,15 +215,15 @@
                         <div class="flex gap-2">
                             <label class="flex-1 cursor-pointer">
                                 <input type="radio" name="appetite_ear" value="none" checked class="peer sr-only">
-                                <div class="text-center py-2 bg-white border peer-checked:bg-gray-200 rounded-lg text-xs">無使用</div>
+                                <div class="text-center py-2 bg-white border peer-checked:bg-gray-200 rounded-lg text-xs transition-colors">無使用</div>
                             </label>
                             <label class="flex-1 cursor-pointer">
                                 <input type="radio" name="appetite_ear" value="left" class="peer sr-only">
-                                <div class="text-center py-2 bg-white border peer-checked:bg-brand-secondary peer-checked:text-white rounded-lg text-xs">左耳 (L)</div>
+                                <div class="text-center py-2 bg-white border peer-checked:bg-brand-secondary peer-checked:text-white rounded-lg text-xs transition-colors">左耳 (L)</div>
                             </label>
                             <label class="flex-1 cursor-pointer">
                                 <input type="radio" name="appetite_ear" value="right" class="peer sr-only">
-                                <div class="text-center py-2 bg-white border peer-checked:bg-brand-secondary peer-checked:text-white rounded-lg text-xs">右耳 (R)</div>
+                                <div class="text-center py-2 bg-white border peer-checked:bg-brand-secondary peer-checked:text-white rounded-lg text-xs transition-colors">右耳 (R)</div>
                             </label>
                         </div>
                     </div>
@@ -255,9 +265,18 @@
                             </div>
                         </div>
 
+                        <!-- Eyes - Changed to Select -->
                         <div>
                             <label class="text-xs text-gray-500 block mb-1">眼睛狀況 (乾性FIP重點)</label>
-                            <input type="text" id="eyes" placeholder="正常 / 混濁 / 變色 / 瞳孔大小不一" class="w-full bg-gray-50 border-0 rounded-lg p-2 text-sm">
+                            <select id="eyes" class="w-full bg-gray-50 border-0 rounded-lg p-2 text-sm">
+                                <option value="正常">正常</option>
+                                <option value="混濁">混濁 / 白霧</option>
+                                <option value="變色">變色 / 葡萄膜炎</option>
+                                <option value="瞳孔大小不一">瞳孔大小不一 (Anisocoria)</option>
+                                <option value="分泌物">有分泌物</option>
+                                <option value="無法張開">無法張開 / 畏光</option>
+                                <option value="其他">其他 (請備註)</option>
+                            </select>
                         </div>
 
                         <div>
@@ -307,12 +326,14 @@
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
                 weight: parseFloat(document.getElementById('weight').value),
+                
                 temperature: document.getElementById('temperature').value,
-                fever: document.getElementById('fever').checked,
+                temp_normal_feel: document.getElementById('temp_normal_feel').checked, // New field
                 
                 food_wet: document.getElementById('food_wet').value,
                 food_dry: document.getElementById('food_dry').value,
                 food_treats: document.getElementById('food_treats').value,
+                food_sos: document.getElementById('food_sos').value, // New field: Emergency food
                 
                 meds_fip_time: document.getElementById('meds_fip_time').value,
                 meds_fip_amount: document.getElementById('meds_fip_amount').value,
@@ -323,7 +344,7 @@
                 mood: document.getElementById('mood').value,
                 mobility: document.getElementById('mobility').value,
                 seizures: document.getElementById('seizures').value,
-                eyes: document.getElementById('eyes').value,
+                eyes: document.getElementById('eyes').value, // Now a select value
                 notes: document.getElementById('notes').value,
                 timestamp: new Date().toISOString()
             };
@@ -349,8 +370,7 @@
             renderRecords();
             updateHeaderInfo();
             
-            // Sweet alert style feedback could go here, sticking to native for simplicity
-            alert('紀錄已儲存！Shirley 加油！');
+            // alert('紀錄已儲存！Shirley 加油！');
         }
 
         function deleteRecord(id) {
@@ -370,12 +390,17 @@
             document.getElementById('date').value = rec.date;
             document.getElementById('time').value = rec.time;
             document.getElementById('weight').value = rec.weight;
-            document.getElementById('temperature').value = rec.temperature || '';
-            document.getElementById('fever').checked = rec.fever;
             
+            // Temp logic
+            document.getElementById('temperature').value = rec.temperature || '';
+            const isNormalFeel = rec.temp_normal_feel || false; // Backward compatibility
+            document.getElementById('temp_normal_feel').checked = isNormalFeel;
+            toggleTemperatureInput(document.getElementById('temp_normal_feel')); // Trigger UI state
+
             document.getElementById('food_wet').value = rec.food_wet;
             document.getElementById('food_dry').value = rec.food_dry;
             document.getElementById('food_treats').value = rec.food_treats;
+            document.getElementById('food_sos').value = rec.food_sos || ''; // Handle old records
             
             document.getElementById('meds_fip_time').value = rec.meds_fip_time;
             document.getElementById('meds_fip_amount').value = rec.meds_fip_amount;
@@ -391,11 +416,23 @@
             document.getElementById('val-mood').innerText = rec.mood;
             document.getElementById('mobility').value = rec.mobility;
             document.getElementById('seizures').value = rec.seizures;
-            document.getElementById('eyes').value = rec.eyes;
+            document.getElementById('eyes').value = rec.eyes || '正常'; // Default to normal if missing
             document.getElementById('notes').value = rec.notes;
 
             document.getElementById('modal-title').innerText = '✏️ 編輯紀錄';
             openModal();
+        }
+
+        // --- Logic for Temperature Checkbox ---
+        function toggleTemperatureInput(checkbox) {
+            const tempInput = document.getElementById('temperature');
+            if (checkbox.checked) {
+                tempInput.value = '38.5';
+                tempInput.disabled = true;
+            } else {
+                tempInput.disabled = false;
+                if(tempInput.value == '38.5') tempInput.value = ''; // clear if it was auto-set
+            }
         }
 
         // --- UI Rendering ---
@@ -418,9 +455,9 @@
                 if (prevRec && prevRec.weight) {
                     const diff = rec.weight - prevRec.weight;
                     if (diff > 0) {
-                        weightDiffHtml = `<span class="text-state-good text-xs font-bold"><i class="fas fa-arrow-up"></i> ${diff.toFixed(2)}</span>`;
+                        weightDiffHtml = `<span class="text-state-good text-xs font-bold bg-green-50 px-1 rounded"><i class="fas fa-arrow-up"></i> ${diff.toFixed(2)}</span>`;
                     } else if (diff < 0) {
-                        weightDiffHtml = `<span class="text-state-bad text-xs font-bold"><i class="fas fa-arrow-down"></i> ${Math.abs(diff).toFixed(2)}</span>`;
+                        weightDiffHtml = `<span class="text-state-bad text-xs font-bold bg-red-50 px-1 rounded"><i class="fas fa-arrow-down"></i> ${Math.abs(diff).toFixed(2)}</span>`;
                     } else {
                         weightDiffHtml = `<span class="text-gray-400 text-xs">-</span>`;
                     }
@@ -434,52 +471,87 @@
                 if (rec.appetite_ear === 'left') earBadge = '<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">左耳藥</span>';
                 if (rec.appetite_ear === 'right') earBadge = '<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">右耳藥</span>';
 
-                // FIP Meds Status
-                const fipMedStatus = rec.meds_fip_amount ? `<span class="text-brand-primary font-bold">💉 ${rec.meds_fip_amount}ml</span>` : '<span class="text-gray-300">未打</span>';
+                // FIP Meds Status (More prominent)
+                const fipMedStatus = rec.meds_fip_amount 
+                    ? `<div class="flex items-center gap-1 bg-brand-primary/10 px-2 py-1 rounded-lg">
+                         <span class="text-xs text-brand-primary font-bold">GS打針</span>
+                         <span class="text-lg font-bold text-brand-primary">${rec.meds_fip_amount}ml</span>
+                       </div>` 
+                    : '<span class="text-xs text-gray-300 border border-dashed border-gray-300 px-2 py-1 rounded">未打</span>';
+
+                // Food display strings
+                const fWet = rec.food_wet ? `<span class="text-gray-600">濕${rec.food_wet}g</span>` : '';
+                const fDry = rec.food_dry ? `<span class="text-gray-600">乾${rec.food_dry}g</span>` : '';
+                const fTreats = rec.food_treats ? `<span class="text-yellow-600">零${rec.food_treats}g</span>` : '';
+                const fSos = rec.food_sos ? `<span class="text-red-500 font-bold">急${rec.food_sos}g</span>` : '';
+                
+                // Join non-empty food strings
+                const foodDisplay = [fWet, fDry, fTreats, fSos].filter(Boolean).join(' / ') || '<span class="text-gray-300">無飲食紀錄</span>';
+
+                // Temp Display
+                const tempDisplay = rec.temp_normal_feel 
+                    ? `<span class="text-state-good font-bold"><i class="fas fa-check-circle"></i> 38.5°C (正常)</span>`
+                    : (rec.temperature ? `${rec.temperature}°C` : '--');
 
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl p-4 card-shadow relative overflow-hidden';
+                card.className = 'bg-white rounded-2xl p-4 card-shadow relative overflow-hidden border-l-4 border-transparent hover:border-brand-primary transition-all';
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
+                    <!-- Header Row -->
+                    <div class="flex justify-between items-start mb-3">
                         <div>
-                            <span class="text-lg font-bold text-gray-700">${rec.date.slice(5)}</span>
-                            <span class="text-xs text-gray-400 ml-1">${rec.time}</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-lg font-bold text-gray-700">${rec.date.slice(5)}</span>
+                                <span class="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">${rec.time}</span>
+                            </div>
                             <div class="flex items-center gap-2 mt-1">
                                 <span class="text-xl font-bold text-gray-800">${rec.weight} kg</span>
                                 ${weightDiffHtml}
                             </div>
                         </div>
-                        <div class="flex flex-col items-end">
-                            <div class="text-xs text-gray-500">${moodStars}</div>
-                            <div class="mt-1">${fipMedStatus}</div>
+                        <div class="flex flex-col items-end gap-1">
+                            ${fipMedStatus}
+                            <div class="text-[10px] text-gray-400 mt-1">${moodStars}</div>
                         </div>
                     </div>
 
                     <!-- Details Grid -->
-                    <div class="grid grid-cols-2 gap-2 text-xs bg-gray-50 p-2 rounded-lg mb-2">
-                        <div><span class="text-gray-400">飲食:</span> 濕${rec.food_wet || 0}/乾${rec.food_dry || 0} g</div>
-                        <div><span class="text-gray-400">體溫:</span> ${rec.temperature || '--'}°C ${rec.fever ? '🔥' : ''}</div>
-                        <div class="col-span-2 flex flex-wrap gap-1">
-                            ${rec.meds_anemia ? '<span class="px-1.5 bg-red-100 text-red-600 rounded">補血</span>' : ''}
-                            ${rec.meds_immune ? '<span class="px-1.5 bg-green-100 text-green-600 rounded">免疫</span>' : ''}
-                            ${earBadge}
+                    <div class="grid grid-cols-1 gap-2 text-xs bg-gray-50 p-3 rounded-xl mb-2">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-utensils text-gray-400 w-4"></i>
+                            <div>${foodDisplay}</div>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-thermometer-half text-gray-400 w-4"></i>
+                            <div>${tempDisplay}</div>
+                        </div>
+                        
+                        <!-- Pills Row -->
+                        ${ (rec.meds_anemia || rec.meds_immune || earBadge) 
+                           ? `<div class="flex flex-wrap gap-1 mt-1 border-t border-gray-200 pt-2">
+                                ${rec.meds_anemia ? '<span class="px-1.5 bg-red-100 text-red-600 rounded">補血藥</span>' : ''}
+                                ${rec.meds_immune ? '<span class="px-1.5 bg-green-100 text-green-600 rounded">免疫藥</span>' : ''}
+                                ${earBadge}
+                              </div>`
+                           : ''
+                        }
                     </div>
 
                     <!-- Serious Symptoms Check -->
                     ${ (rec.mobility !== 'normal' || rec.seizures !== 'none' || (rec.eyes && rec.eyes !== '正常')) 
-                        ? `<div class="bg-red-50 text-red-700 px-2 py-1 rounded text-xs mb-2">
-                             ⚠️ 異常: ${translateOption(rec.mobility)} / ${translateOption(rec.seizures)} / 眼: ${rec.eyes}
+                        ? `<div class="bg-red-50 text-red-700 px-3 py-2 rounded-lg text-xs mb-2 border border-red-100 flex flex-wrap gap-2">
+                             ${rec.mobility !== 'normal' ? `<span class="font-bold">⚠️ ${translateOption(rec.mobility)}</span>` : ''}
+                             ${rec.seizures !== 'none' ? `<span class="font-bold">⚡ ${translateOption(rec.seizures)}</span>` : ''}
+                             ${(rec.eyes && rec.eyes !== '正常') ? `<span class="font-bold">👁️ 眼: ${rec.eyes}</span>` : ''}
                            </div>` 
                         : '' 
                     }
 
-                    ${rec.notes ? `<p class="text-sm text-gray-600 border-l-2 border-gray-300 pl-2 italic">"${rec.notes}"</p>` : ''}
+                    ${rec.notes ? `<p class="text-sm text-gray-600 border-l-2 border-brand-accent pl-2 italic my-2">"${rec.notes}"</p>` : ''}
 
                     <!-- Actions -->
-                    <div class="absolute top-4 right-4 flex gap-3 opacity-20 hover:opacity-100 transition-opacity">
-                        <button onclick="editRecord('${rec.id}')" class="text-blue-500"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteRecord('${rec.id}')" class="text-red-500"><i class="fas fa-trash"></i></button>
+                    <div class="absolute bottom-4 right-4 flex gap-4 opacity-30 hover:opacity-100 transition-opacity">
+                        <button onclick="editRecord('${rec.id}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit text-lg"></i></button>
+                        <button onclick="deleteRecord('${rec.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash text-lg"></i></button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -505,7 +577,7 @@
                 const todayStr = new Date().toISOString().split('T')[0];
                 const todayRec = records.find(r => r.date === todayStr);
                 
-                if (todayRec && todayRec.meds_fip_amount) {
+                if (todayRec && todayRec.meds_fip_amount && todayRec.meds_fip_amount > 0) {
                     document.getElementById('today-med-status').innerText = '已完成 ✅';
                     document.getElementById('today-med-status').className = 'font-bold text-state-good text-lg';
                 } else {
@@ -525,6 +597,10 @@
             } else {
                 document.getElementById('care-form').reset();
                 document.getElementById('record-id').value = '';
+                // Reset checkbox state
+                document.getElementById('temp_normal_feel').checked = false;
+                toggleTemperatureInput(document.getElementById('temp_normal_feel'));
+                
                 setDefaultDateTime();
                 document.getElementById('modal-title').innerText = '📝 記錄 Shirley 的狀況';
                 // Pre-fill last weight for convenience
